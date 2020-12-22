@@ -1,16 +1,15 @@
 import { createRef, useEffect, useState } from "react"
 import "./Home.scss";
 import Encoding from "encoding-japanese";
+import { Subscription } from "../models/Subscription";
+import { LrSettings } from "../models/LrSettings";
 
-const Home = function(){
+
+const subscription = new Subscription<LrSettings>();
+
+const Home = function(this: any){
     
-    const [settings,setSettings] = useState({ 
-        caractersLen: 100, 
-        pageI: 0,
-        caractersTotal: 0,
-        separator: "",
-    }); 
-    const [fontSize,setFontSize] = useState(14);
+    const [settings,setSettings] = useState(new LrSettings()); 
     const refTextContent  =createRef<HTMLDivElement>();
 
 
@@ -21,20 +20,66 @@ const Home = function(){
         return  parseInt(window.localStorage.getItem(FONT_SIZE_KEY) || "14");
     }
 
+    const changeSettings = (to:any) =>{
+        const oldOne = settings;
+        const newOne = {...oldOne,...to};
+        setSettings(newOne);
+        subscription.notifyAll({
+            to: newOne,
+            from: oldOne 
+        });
+    }
 
     const changeBodyFontSizeTo = function(val : number){
-        setFontSize(val);
-        document.body.style.fontSize = val + "px";
-        window.localStorage.setItem(FONT_SIZE_KEY,val.toString());
+        changeSettings({fontSize: val});
     }
 
    useEffect( ()=>{
-    changeBodyFontSizeTo(getDefaultBodyFontSize())
+        subscription.subscribe({
+            next(context){
+                window.localStorage.setItem("settings", JSON.stringify(context.to));
+                console.log("settings saved");
+            }
+        });
+
+        subscription.subscribe({
+            next({from, to}){
+              if(from.fontSize !== to.fontSize){
+                document.body.style.fontSize = to.fontSize + "px";
+                console.log("fontsize updated");
+              }
+            }
+        });
+
+        const savedStrSettings= window.localStorage.getItem("settings");
+       if(savedStrSettings){
+           changeSettings(JSON.parse(savedStrSettings));
+       }
    },[]);
 
    useEffect(()=>{
     const textContent = window.localStorage.getItem(TEXT_CONTENT_KEY) || "";
-    render(textContent,getTextContentPosI(settings.pageI, settings.caractersLen),settings.caractersLen);
+    if(settings.separator.length > 0){
+        const textContent = window.localStorage.getItem(TEXT_CONTENT_KEY) || "";
+        const html = document.createElement("html");
+        html.innerHTML = textContent;
+        const textContentDOM = refTextContent.current;
+        if(textContentDOM){
+            textContentDOM.innerHTML = "";
+            const query =  html.querySelectorAll(settings.separator);
+            const posI = getTextContentPosI(settings.pageI,settings.length);
+            for (let index = posI; index < query.length; index++) {
+                const item = query[index];
+                if(index < posI +  settings.length){
+                    textContentDOM.append(item);
+                } else {
+                    break;
+                }
+            }
+        }
+    } else{
+        render(textContent,getTextContentPosI(settings.pageI, settings.length),settings.length);
+    }
    },[settings]);
 
    const render = (fileContents : string, start: number, length?: number ) => {
@@ -61,9 +106,9 @@ const Home = function(){
                   type: 'string',
                 });
 
-                const pos = getTextContentPosI(settings.pageI, settings.caractersLen);
+                const pos = getTextContentPosI(settings.pageI, settings.length);
 
-                render(textContent,pos,settings.caractersLen);
+                render(textContent,pos,settings.length);
                 window.localStorage.setItem(TEXT_CONTENT_KEY,textContent);
         }
         reader.readAsArrayBuffer(file);
@@ -71,25 +116,34 @@ const Home = function(){
 
     const getTextContentPosI = (i:number,len:number) => i * len;
 
+    const changeSeparator = function(value: string){
+        changeSettings({separator: value});
+    }
+
+
     return <div className="home">
         <div className="head">
             <div className="item">
-                <button type="button" onClick={()=> setSettings({...settings,pageI: settings.pageI - 1}) }>&lt;</button>
+                <button type="button" onClick={()=> changeSettings({pageI: settings.pageI - 1}) }>&lt;</button>
                 <input className="counter" type="text" value={settings.pageI + 1}/>
-                <input onChange={({target}) => setSettings({...settings,caractersLen: parseInt(target.value)})} type="text" value={settings.caractersLen}/>
-                <input onChange={({target}) => setSettings({...settings,separator: target.value.trim()})}  type="text" className="counter" value={settings.separator}/>
-                <button type="button"onClick={()=> setSettings({...settings,pageI: settings.pageI + 1}) }>&gt;</button>
+                <input onChange={({target}) => changeSettings({length: parseInt(target.value)})} type="text" value={settings.length}/>
+                <button type="button"onClick={()=> changeSettings({pageI: settings.pageI + 1}) }>&gt;</button>
             </div>
             <div className="item">
-            <button type="button" onClick={ ()=> changeBodyFontSizeTo(fontSize - 1)}>-</button>
-            <input type="text" onChange={ ({target})=> changeBodyFontSizeTo(parseInt(target.value) || 0)}  value={fontSize} style={{ width: "25px"}}/>
-            <button type="button" onClick={ ()=> changeBodyFontSizeTo(fontSize + 1)}>+</button>
+            <button type="button" onClick={ ()=> changeBodyFontSizeTo(settings.fontSize - 1)}>-</button>
+            <input type="text" onChange={ ({target})=> changeBodyFontSizeTo(parseInt(target.value) || 0)}  value={settings.fontSize} style={{ width: "25px"}}/>
+            <button type="button" onClick={ ()=> changeBodyFontSizeTo(settings.fontSize + 1)}>+</button>
             </div>
 
             <label className="item">
                 <input onChange= { ({target}) => refTextContent.current?.setAttribute("contentEditable",target.checked.toString())  } type="checkbox"/>
                 Edit text.
             </label>
+            <div className="item">
+                <label>Separator&nbsp;
+                <input onChange={({target}) => changeSeparator(target.value)}  type="text" className="counter" value={settings.separator}/>
+                </label>
+            </div>
             <div className="item">
                 <input type="file" onChange={({target}) => target.files?.length ? readFile(target.files[0]) : 1}/>
             </div>
