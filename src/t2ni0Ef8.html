@@ -1,0 +1,152 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/encoding-japanese/1.0.29/encoding.min.js"></script>
+  <style>
+    body {
+      background-color: #280000;
+      color: #FFCC33;
+      line-height: 2.0;
+      white-space: pre-line;
+      overflow: auto;
+      padding: 0 10px;
+      margin: 20px;
+      overflow: auto;
+      margin: 40px auto;
+      max-width: 60%;
+      padding: 0 10px;
+    }
+
+    img {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+    }
+
+    .furigana {
+      color: #BD7777;
+      direction: rtl;
+      display: inline-block;
+      font-size: .5em;
+      margin-top: -1em;
+      user-select: none;
+      vertical-align: top;
+      white-space: nowrap;
+      width: 0;
+    }
+
+    .textArea {
+      position: fixed;
+      top: 0;
+      padding: 0 12px;
+      border-style: solid;
+      background-color: #250000;
+      color: #c19920;
+      border-color: #280000;
+      border-width: 1px;
+      line-height: 2.0;
+      width: 19%;
+      height: 100%;
+    }
+
+    .textAreaLeft {
+      border-right-color: #705400;
+      left: 0px;
+    }
+
+    .textAreaRight {
+      border-left-color: #705400;
+      right: 0px;
+      resize: none;
+    }
+
+    html {
+      font-size: 2rem;
+      ;
+    }
+
+    ruby>rt {
+      visibility: hidden;
+    }
+
+    ruby:hover>rt {
+      visibility: visible;
+      ;
+    }
+  </style>
+</head>
+
+<body onscroll="SetDivPosition()">
+  <center>
+    <input type="file" id="file" />
+    <h1 id="fileName"></h1>
+  </center>
+  <textarea class="textArea textAreaLeft">
+        &#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;
+        &#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;
+    </textarea>
+  <div id="fileContents"></div>
+  <textarea class="textArea textAreaRight">
+        &#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;
+        &#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;
+    </textarea>
+
+  <script type="text/javascript">
+    const htmlFileName = 'fileName_' + window.location.pathname.split("/").pop();
+    const htmlFileContents = 'fileContents_' + window.location.pathname.split("/").pop();
+    const render = (fileName, fileContents) => {
+      fileContents = fileContents
+        .replace(/［＃\（(.*?.jpg)\）入る］/g, "<img src='$1' title='$1'>") // Insert <img src="..." >
+        .replace(/［＃改ページ］/g, "<hr></hr>") // Draw a white line for page changes
+        .replace(/《(.*?)》/g, "<span class='furigana'>$1</span>"); // Wrap furigana
+      document.getElementById('fileName').innerHTML = fileName;
+      nameoffile = fileName;
+      document.getElementById('fileContents').innerHTML = fileContents;
+    };
+    document.getElementById('file').addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        let fileContents = new Uint8Array(e.target.result);
+        fileContents = Encoding.convert(fileContents,
+          {
+            to: 'unicode',
+            from: Encoding.detect(fileContents),
+            type: 'string'
+          });
+        // Remember the opened file
+        localStorage.setItem(htmlFileName, file.name);
+        localStorage.setItem(htmlFileContents, fileContents);
+        // Render the new file
+        render(file.name, fileContents);
+      };
+      reader.readAsArrayBuffer(file);
+    }, false);
+
+    if (localStorage.getItem(htmlFileName)) {
+      // If opened a file before, render it
+      render(localStorage.getItem(htmlFileName), localStorage.getItem(htmlFileContents));
+    }
+
+    // Load scrollbar position
+    window.onload = function () {
+      var strCook = localStorage.getItem(htmlFileName + "yPos")
+      if (strCook.indexOf("!~") != 0) {
+        var intS = strCook.indexOf("!~");
+        var intE = strCook.indexOf("~!");
+        var strPos = strCook.substring(intS + 2, intE);
+        document.getElementsByTagName("body")[0].scrollTop = strPos;
+      }
+    }
+
+    // Set where scrollbar is at
+    function SetDivPosition() {
+      var intY = document.getElementsByTagName("body")[0].scrollTop;
+      document.title = document.getElementById('fileName').innerHTML + " " + intY;
+      localStorage.setItem(htmlFileName + "yPos", "yPos=!~" + intY + "~!")
+    }  
+  </script>
+</body>
+
+</html>
