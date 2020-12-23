@@ -4,21 +4,40 @@ html,body{
 }
 
 .home{
+  .body{
+     display: flex;
+     .right{
+       position: relative;
+       .bar{
+         top:0;
+         position: fixed;
+         height: 100%;
+         background-color: #fff;
+         cursor: ew-resize;
+       }
+     }
+  }
   .counter{
     width: 25px;
   }
-}
-
-.mid{
-  ruby>rt {
-    visibility: hidden;
+  .head{
+    position:fixed;
+    width: 100%;
+    background-color: midnightblue;
+      display: flex;
+      align-items: center;
+      padding: 25px;
+      justify-content: space-between;
   }
+  
 }
 
-.head{
-  background-color: midnightblue;
-    display: flex;
-    align-items: center;
-    padding: 25px;
-    justify-content: space-between;
+body.furigana-off{
+  .mid{
+    ruby>rt {
+      visibility: hidden;
+    }
+  }
+   
 }
+

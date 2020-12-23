@@ -3,22 +3,26 @@ import "./Home.scss";
 import Encoding from "encoding-japanese";
 import { Subscription } from "../models/Subscription";
 import { LrSettings } from "../models/LrSettings";
+import { CommandComponentFactory } from "../models/Command";
 
 
 const subscription = new Subscription<LrSettings>();
+const commands ={
+    selected: ["furigana-visibility"],
+    available: ["furigana-visibility"],
+}
+const factory = new CommandComponentFactory();
+
+
+
+
 
 const Home = function(this: any){
     
     const [settings,setSettings] = useState(new LrSettings()); 
     const refTextContent  =createRef<HTMLDivElement>();
 
-
-    const FONT_SIZE_KEY = "fontSize";
     const TEXT_CONTENT_KEY = "textContentKey";
-
-    const getDefaultBodyFontSize = function(){
-        return  parseInt(window.localStorage.getItem(FONT_SIZE_KEY) || "14");
-    }
 
     const changeSettings = (to:any) =>{
         const oldOne = settings;
@@ -120,9 +124,14 @@ const Home = function(this: any){
         changeSettings({separator: value});
     }
 
+ 
 
     return <div className="home">
+        <div>
+            
         <div className="head">
+            {commands.selected.map(item => (<div className="item"  key={item}>{factory.createCommand(item)}</div>))}
+            
             <div className="item">
                 <button type="button" onClick={()=> changeSettings({pageI: settings.pageI - 1}) }>&lt;</button>
                 <input className="counter" type="text" value={settings.pageI + 1}/>
@@ -148,10 +157,14 @@ const Home = function(this: any){
                 <input type="file" onChange={({target}) => target.files?.length ? readFile(target.files[0]) : 1}/>
             </div>
         </div>
+        </div>
         <div className="body">
             <div className="left"></div>
             <div className="mid" ref={refTextContent}></div>
-            <div className="right"></div>
+            <div className="right">
+                <div className="bar">&nbsp;</div>
+                <input type="text"/>
+            </div>
         </div>
     </div>
 };
