@@ -4,30 +4,68 @@ html,body{
 }
 
 .home{
+  .bar{
+    background-color: #f1d4b3;
+    cursor: ew-resize;
+  }
+  
+  .head{
+   .controls{
+      position:fixed;
+      width: 100%;
+      background-color: midnightblue;
+      z-index: 2;
+      top: 0;
+      .container{
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        justify-content: space-between;
+        
+      }
+      .bar{
+        background-color: #f1d4b3;
+        cursor: n-resize;
+        height: 8px;
+      }
+   }
+   .container, .controls-2{
+      height: 60px;
+   }
+  }
   .body{
      display: flex;
+     .mid{
+       padding: 10px 25px;
+     }
      .right{
        position: relative;
-       .bar{
+       display: flex;
+       background-color: #d44c07;
+       .fixed{
          top:0;
+         right: 0;
          position: fixed;
-         height: 100%;
-         background-color: #fff;
-         cursor: ew-resize;
+         height:100vh;
+         display: flex;
+       }
+       
+       .controls{
+         overflow: hidden;
+         min-width: 0px;
+         max-width: 80vw;;
+
+         .floating{
+          position: fixed;
+          width: 100%;
+          bottom: 0;
+          height: 80vh;
+         }
        }
      }
   }
   .counter{
     width: 25px;
-  }
-  .head{
-    position:fixed;
-    width: 100%;
-    background-color: midnightblue;
-      display: flex;
-      align-items: center;
-      padding: 25px;
-      justify-content: space-between;
   }
   
 }

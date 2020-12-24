@@ -124,15 +124,45 @@ const Home = function(this: any){
         changeSettings({separator: value});
     }
 
+    const onResizeHead = (event: React.MouseEvent<HTMLDivElement,MouseEvent>)=>{
+        const parent = event.currentTarget.previousElementSibling as HTMLDivElement;
+        const parent2 = event.currentTarget.parentElement?.previousElementSibling as HTMLDivElement;
+
+        const xInitial = event.clientY;
+        const wInitial =  parent.clientHeight;
+
+        window.onselectstart = ()=> false;
+        const onMouseMove = (event2:MouseEvent)=> {
+            if(parent && parent2){
+                const xFinal = event2.clientY;
+                const height = wInitial + (xFinal - xInitial);
+                
+                window.requestAnimationFrame(() => {
+                    parent.style.height =  `${height}px`;
+                    parent2.style.height = `${height}px`;
+                });
+            }
+        };
+        document.addEventListener("mousemove",onMouseMove);
+        document.addEventListener("mouseup", ()=> {
+            window.onselectstart = ()=> true;
+            document.removeEventListener("mousemove",onMouseMove)
+        });
+    }
+
  
 
     return <div className="home">
-        <div>
+            <div className="head">
+                <div className="controls-2"></div>
+                <div className="controls">
+                    <div className="container">
+                            {commands.selected.map(item => (<div className="item"  key={item}>{factory.createCommand(item)}</div>))}
+                    </div>
+                    <div className="bar" onMouseDown={onResizeHead}></div>
+                </div>
             
-        <div className="head">
-            {commands.selected.map(item => (<div className="item"  key={item}>{factory.createCommand(item)}</div>))}
-            
-            <div className="item">
+            {/* <div className="item">
                 <button type="button" onClick={()=> changeSettings({pageI: settings.pageI - 1}) }>&lt;</button>
                 <input className="counter" type="text" value={settings.pageI + 1}/>
                 <input onChange={({target}) => changeSettings({length: parseInt(target.value)})} type="text" value={settings.length}/>
@@ -156,14 +186,39 @@ const Home = function(this: any){
             <div className="item">
                 <input type="file" onChange={({target}) => target.files?.length ? readFile(target.files[0]) : 1}/>
             </div>
+        */}
+       
         </div>
-        </div>
+        
         <div className="body">
             <div className="left"></div>
             <div className="mid" ref={refTextContent}></div>
             <div className="right">
-                <div className="bar">&nbsp;</div>
-                <input type="text"/>
+
+                <div onDragStart={() => false} onMouseDown={ (event) =>{
+                    const parent = event.currentTarget.nextElementSibling as HTMLElement;
+                    const xInitial = event.clientX
+                    const wInitial =  parent.clientWidth;
+                    window.onselectstart = ()=> false;
+                    const onMouseMove = (event2:MouseEvent)=> {
+                        if(parent){
+                            const xFinal = event2.clientX;
+                            const width = wInitial + (-xFinal + xInitial);
+                            // console.log([xInitial,xFinal,width]);
+                            window.requestAnimationFrame(() => parent.style.width =  `${width}px`)
+                        }
+                    };
+                    document.addEventListener("mousemove",onMouseMove);
+                    document.addEventListener("mouseup", ()=> {
+                        window.onselectstart = ()=> true;
+                        document.removeEventListener("mousemove",onMouseMove)
+                    })
+                }}  className="bar">&nbsp;</div>
+                <div className="controls">
+                    <div className="floating">
+                    <input type="text"/>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
