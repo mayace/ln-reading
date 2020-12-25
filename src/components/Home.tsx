@@ -1,25 +1,29 @@
-import { createRef, useEffect, useState } from "react"
+import { Component, createRef, useEffect, useState } from "react"
 import "./Home.scss";
 import Encoding from "encoding-japanese";
 import { Subscription } from "../models/Subscription";
-import { LrSettings } from "../models/LrSettings";
-import { CommandComponentFactory } from "../models/Command";
+import { LrSettings, PageSettings } from "../models/LrSettings";
+import { CommandComponentFactory, KeywordItem, KeywordsComponent } from "../models/Command";
 
 
 const subscription = new Subscription<LrSettings>();
+subscription.subscribe({
+    next(context){
+        window.localStorage.setItem("settings", JSON.stringify(context.to));
+        console.log("settings saved");
+    }
+});
+const savedSettingsStr = window.localStorage.getItem("settings") || "";
+
 const commands ={
     selected: ["furigana-visibility"],
     available: ["furigana-visibility"],
 }
 const factory = new CommandComponentFactory();
 
-
-
-
-
 const Home = function(this: any){
     
-    const [settings,setSettings] = useState(new LrSettings()); 
+    const [settings,setSettings] = useState( savedSettingsStr.trim().length > 0 ? JSON.parse(savedSettingsStr) as LrSettings : new LrSettings()); 
     const refTextContent  =createRef<HTMLDivElement>();
 
     const TEXT_CONTENT_KEY = "textContentKey";
@@ -38,14 +42,12 @@ const Home = function(this: any){
         changeSettings({fontSize: val});
     }
 
-   useEffect( ()=>{
-        subscription.subscribe({
-            next(context){
-                window.localStorage.setItem("settings", JSON.stringify(context.to));
-                console.log("settings saved");
-            }
-        });
 
+   
+
+    
+
+   useEffect( ()=>{
         subscription.subscribe({
             next({from, to}){
               if(from.fontSize !== to.fontSize){
@@ -54,11 +56,12 @@ const Home = function(this: any){
               }
             }
         });
+        
 
-        const savedStrSettings= window.localStorage.getItem("settings");
-       if(savedStrSettings){
-           changeSettings(JSON.parse(savedStrSettings));
-       }
+    //     const savedStrSettings= window.localStorage.getItem("settings");
+    //    if(savedStrSettings){
+    //        changeSettings(JSON.parse(savedStrSettings));
+    //    }
    },[]);
 
    useEffect(()=>{
@@ -80,6 +83,14 @@ const Home = function(this: any){
                     break;
                 }
             }
+            
+                //operacion 2
+                //realizarlo con el chain of responability patter
+                const textSelected = settings.textSelected.trim();
+              if(textSelected.length > 0){
+                   const finalText =  textContentDOM.innerHTML.replaceAll(textSelected, `<span style="background-color: gray;">${textSelected}</span>`);
+                   textContentDOM.innerHTML = finalText;
+              }
         }
     } else{
         render(textContent,getTextContentPosI(settings.pageI, settings.length),settings.length);
@@ -150,6 +161,9 @@ const Home = function(this: any){
         });
     }
 
+
+    const rightCommandList = ()=> settings.commandList.filter(item => item.layout === "right");
+  
  
 
     return <div className="home">
@@ -192,7 +206,12 @@ const Home = function(this: any){
         
         <div className="body">
             <div className="left"></div>
-            <div className="mid" ref={refTextContent}></div>
+            <div  onMouseUpCapture={(event)=>{
+                const textSelected = window.getSelection()?.toString();
+                if(textSelected && textSelected.length > 0){;
+                    changeSettings({textSelected});
+                }
+            }} className="mid" ref={refTextContent}></div>
             <div className="right">
 
                 <div onDragStart={() => false} onMouseDown={ (event) =>{
@@ -216,12 +235,28 @@ const Home = function(this: any){
                 }}  className="bar">&nbsp;</div>
                 <div className="controls">
                     <div className="floating">
-                    <input type="text"/>
+                        <div className="item">
+                            <KeywordsComponent onStateChanged={ to =>  {
+                                const pages = {
+                                  "0":  new PageSettings(),
+                                };
+                                pages["0"].keyWordList = to;
+                                changeSettings({pages});
+                            }} keywordList={ settings.pages[settings.pageI]?.keyWordList || []}/>
+                        </div>
+                        {/* <div className="item">
+                            <KeywordItem keyword={ {text: settings.textSelected, color: "#808080", isGlobal: false}}/>
+                            <button type="button">
+                                <span className="icon">ddd</span>
+                            </button>
+                        </div> */}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 };
+
+
 
 export default  Home;
