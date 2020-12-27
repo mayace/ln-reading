@@ -3,14 +3,9 @@ import "./Home.scss";
 import Encoding from "encoding-japanese";
 import { Subscription } from "../models/Subscription";
 import { Settings, PageSettings } from "../models/Settings";
-import {
-  CommandComponentFactory,
-  KeywordItem,
-  KeywordsComponent,
-} from "../models/Command";
+import { CommandComponentFactory } from "../models/Command";
 import { NavigationCommand } from "./Commands/Navegation";
-
-
+import { KeywordItem, KeywordsComponent } from "./Commands/Keyword";
 
 const subscription = new Subscription<Settings>();
 subscription.subscribe({
@@ -60,7 +55,6 @@ const Home = function () {
         }
       },
     });
-
   }, []);
 
   useEffect(() => {
@@ -88,12 +82,19 @@ const Home = function () {
 
         //operacion 2
         //realizarlo con el chain of responability patter
-        const textSelected = settings.textSelected.trim();
-        if (textSelected.length > 0) {
-          const finalText = textContentDOM.innerHTML.replaceAll(
-            textSelected,
-            `<span style="background-color: gray;">${textSelected}</span>`
-          );
+        const keywordList =
+          settings.pages[settings.navigation.pageI].keyWordList;
+        if (keywordList.length > 0) {
+          let finalText = textContentDOM.innerHTML;
+          keywordList.forEach((item) => {
+            if (item.text.trim().length > 0) {
+              finalText = finalText.replaceAll(
+                item.text,
+                `<span style="background-color: ${item.color};">${item.text}</span>`
+              );
+            }
+          });
+
           textContentDOM.innerHTML = finalText;
         }
       }
@@ -107,7 +108,7 @@ const Home = function () {
         settings.navigation.length
       );
     }
-  }, [settings.navigation]);
+  }, [settings]);
 
   const render = (fileContents: string, start: number, length?: number) => {
     fileContents = fileContents
@@ -180,6 +181,7 @@ const Home = function () {
   const rightCommandList = () =>
     settings.commandList.filter((item) => item.layout === "right");
 
+  const getCurrentPage = () => settings.pages[settings.navigation.pageI];
   return (
     <div className="home">
       <div className="head">
@@ -195,9 +197,14 @@ const Home = function () {
               onTryToChange={(to) => changeSettings({ navigation: to })}
               navigation={settings.navigation}
             />
-             <div className="item">
-            <input type="file" onChange={({target}) => target.files?.length ? readFile(target.files[0]) : 1}/>
-        </div>
+            <div className="item">
+              <input
+                type="file"
+                onChange={({ target }) =>
+                  target.files?.length ? readFile(target.files[0]) : 1
+                }
+              />
+            </div>
           </div>
           <div className="bar" onMouseDown={onResizeHead}></div>
         </div>
@@ -224,7 +231,6 @@ const Home = function () {
                 </label>
             </div>
         */}
-       
       </div>
 
       <div className="body">
@@ -233,7 +239,9 @@ const Home = function () {
           onMouseUpCapture={(event) => {
             const textSelected = window.getSelection()?.toString();
             if (textSelected && textSelected.length > 0) {
-              changeSettings({ textSelected });
+              const page = getCurrentPage();
+              page.keyWordList[page.keyWordList.length - 1].text = textSelected;
+              changeSettings({ pages: { ...settings.pages } });
             }
           }}
           className="mid"
@@ -273,10 +281,12 @@ const Home = function () {
               <div className="item">
                 <KeywordsComponent
                   onStateChanged={(to) => {
-                    const pages = {
-                      "0": new PageSettings(),
-                    };
-                    pages["0"].keyWordList = to;
+                    const pages = settings.pages;
+                    const index = settings.navigation.pageI;
+                    if (!pages[index]) {
+                      pages[index] = new PageSettings();
+                    }
+                    pages[index].keyWordList = to;
                     changeSettings({ pages });
                   }}
                   keywordList={

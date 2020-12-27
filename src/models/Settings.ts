@@ -18,10 +18,14 @@ export class Settings {
     left: { width: 100 },
     top: { height: 100 },
   };
-  
+
   navigation = new NavigationSettings()
   pages: { [key: number]: PageSettings } = {};
   commandList: CommandSettings[] = [{ code: "keywords", layout: "right" }];
+
+  public getCurrentPage(): PageSettings {
+    return this.pages[this.navigation.pageI];
+  }
 }
 
 export class CommandSettings {
