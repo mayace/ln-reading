@@ -1,5 +1,5 @@
 import { Component } from "react";
-import { KeywordSettings } from "./LrSettings";
+import { KeywordSettings } from "./Settings";
 
 export interface ICommand {
     execute(params: any):void;
