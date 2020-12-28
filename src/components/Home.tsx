@@ -2,10 +2,12 @@ import { Component, createRef, useEffect, useState } from "react";
 import "./Home.scss";
 import Encoding from "encoding-japanese";
 import { Subscription } from "../models/Subscription";
-import { Settings, PageSettings } from "../models/Settings";
+import { Settings, PageSettings, DocumentSettings } from "../models/Settings";
 import { CommandComponentFactory } from "../models/Command";
 import { NavigationCommand } from "./Commands/Navegation";
 import { KeywordItem, KeywordsComponent } from "./Commands/Keyword";
+
+import { FontSizeCommand } from "./Commands/FontSize";
 
 const subscription = new Subscription<Settings>();
 subscription.subscribe({
@@ -49,8 +51,8 @@ const Home = function () {
   useEffect(() => {
     subscription.subscribe({
       next({ from, to }) {
-        if (from.fontSize !== to.fontSize) {
-          document.body.style.fontSize = to.fontSize + "px";
+        if (from.document.fontSize !== to.document.fontSize) {
+          document.body.style.fontSize = to.document.fontSize + "px";
           console.log("fontsize updated");
         }
       },
@@ -188,15 +190,18 @@ const Home = function () {
         <div className="controls-2"></div>
         <div className="controls">
           <div className="container">
-            {commands.selected.map((item) => (
-              <div className="item" key={item}>
-                {factory.createCommand(item)}
-              </div>
-            ))}
-            <NavigationCommand
-              onTryToChange={(to) => changeSettings({ navigation: to })}
-              navigation={settings.navigation}
-            />
+            <div className="item">
+              <FontSizeCommand
+                document={settings.document || new DocumentSettings()}
+                onTryToChange={(to) => changeSettings({ document: to })}
+              />
+            </div>
+            <div className="item">
+              <NavigationCommand
+                onTryToChange={(to) => changeSettings({ navigation: to })}
+                navigation={settings.navigation}
+              />
+            </div>
             <div className="item">
               <input
                 type="file"
@@ -208,29 +213,6 @@ const Home = function () {
           </div>
           <div className="bar" onMouseDown={onResizeHead}></div>
         </div>
-
-        {/* <div className="item">
-                <button type="button" onClick={()=> changeSettings({pageI: settings.pageI - 1}) }>&lt;</button>
-                <input className="counter" type="text" value={settings.pageI + 1}/>
-                <input onChange={({target}) => changeSettings({length: parseInt(target.value)})} type="text" value={settings.length}/>
-                <button type="button"onClick={()=> changeSettings({pageI: settings.pageI + 1}) }>&gt;</button>
-            </div>
-            <div className="item">
-            <button type="button" onClick={ ()=> changeBodyFontSizeTo(settings.fontSize - 1)}>-</button>
-            <input type="text" onChange={ ({target})=> changeBodyFontSizeTo(parseInt(target.value) || 0)}  value={settings.fontSize} style={{ width: "25px"}}/>
-            <button type="button" onClick={ ()=> changeBodyFontSizeTo(settings.fontSize + 1)}>+</button>
-            </div>
-
-            <label className="item">
-                <input onChange= { ({target}) => refTextContent.current?.setAttribute("contentEditable",target.checked.toString())  } type="checkbox"/>
-                Edit text.
-            </label>
-            <div className="item">
-                <label>Separator&nbsp;
-                <input onChange={({target}) => changeSeparator(target.value)}  type="text" className="counter" value={settings.separator}/>
-                </label>
-            </div>
-        */}
       </div>
 
       <div className="body">

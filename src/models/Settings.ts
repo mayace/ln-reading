@@ -7,8 +7,7 @@ export class NavigationSettings {
 }
 
 export class Settings {
-  fontSize: number = 14;
-  textSelected = "";
+  document = new DocumentSettings()
 
   content = {
     localStorageKey: "",
@@ -26,6 +25,10 @@ export class Settings {
   public getCurrentPage(): PageSettings {
     return this.pages[this.navigation.pageI];
   }
+}
+
+export class DocumentSettings {
+  fontSize = 14
 }
 
 export class CommandSettings {
