@@ -4,10 +4,7 @@ html,body{
 }
 
 .home{
-  .bar{
-    background-color: #f1d4b3;
-    cursor: ew-resize;
-  }
+ 
   
   .head{
    .controls{
@@ -49,6 +46,12 @@ html,body{
          height:100vh;
          display: flex;
        }
+
+       .bar{
+        background-color: #f1d4b3;
+        cursor: ew-resize;
+        width: 8px;
+      }
        
        .controls{
          overflow: hidden;
@@ -59,7 +62,7 @@ html,body{
           position: fixed;
           width: 100%;
           bottom: 0;
-          height: 80vh;
+          height: 100vh;
          }
        }
      }

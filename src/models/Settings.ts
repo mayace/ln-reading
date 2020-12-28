@@ -5,6 +5,14 @@ export class NavigationSettings {
   pageI = 0;
   separator = "";
 }
+export class ViewSettings {
+  left = { width: 0 }
+  top = { height: 0 }
+  right = { width: 0 }
+}
+export class DocumentSettings {
+  fontSize = 14
+}
 
 export class Settings {
   document = new DocumentSettings()
@@ -13,10 +21,7 @@ export class Settings {
     localStorageKey: "",
   };
 
-  layout = {
-    left: { width: 100 },
-    top: { height: 100 },
-  };
+  view = new ViewSettings()
 
   navigation = new NavigationSettings()
   pages: { [key: number]: PageSettings } = {};
@@ -27,9 +32,6 @@ export class Settings {
   }
 }
 
-export class DocumentSettings {
-  fontSize = 14
-}
 
 export class CommandSettings {
   layout = "";

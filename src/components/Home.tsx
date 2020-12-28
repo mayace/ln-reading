@@ -2,7 +2,12 @@ import { Component, createRef, useEffect, useState } from "react";
 import "./Home.scss";
 import Encoding from "encoding-japanese";
 import { Subscription } from "../models/Subscription";
-import { Settings, PageSettings, DocumentSettings } from "../models/Settings";
+import {
+  Settings,
+  PageSettings,
+  DocumentSettings,
+  ViewSettings,
+} from "../models/Settings";
 import { CommandComponentFactory } from "../models/Command";
 import { NavigationCommand } from "./Commands/Navegation";
 import { KeywordItem, KeywordsComponent } from "./Commands/Keyword";
@@ -167,10 +172,41 @@ const Home = function () {
         const xFinal = event2.clientY;
         const height = wInitial + (xFinal - xInitial);
 
-        window.requestAnimationFrame(() => {
-          parent.style.height = `${height}px`;
-          parent2.style.height = `${height}px`;
-        });
+        const view = { ...new ViewSettings(), ...settings.view };
+        view.top.height = Math.max(0, height);
+        changeSettings({ view });
+
+        // window.requestAnimationFrame(() => {
+        //   parent.style.height = `${height}px`;
+        //   parent2.style.height = `${height}px`;
+        // });
+      }
+    };
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", () => {
+      window.onselectstart = () => true;
+      document.removeEventListener("mousemove", onMouseMove);
+    });
+  };
+
+  const onResizeRight = (
+    event: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => {
+    const parent = event.currentTarget.nextElementSibling as HTMLElement;
+    const xInitial = event.clientX;
+    const wInitial = parent.clientWidth;
+    window.onselectstart = () => false;
+    const onMouseMove = (event2: MouseEvent) => {
+      if (parent) {
+        const xFinal = event2.clientX;
+        const width = wInitial + (-xFinal + xInitial);
+
+        const view = { ...new ViewSettings(), ...settings.view };
+        view.right.width = width;
+
+        changeSettings({ view });
+        // console.log([xInitial,xFinal,width]);
+        // window.requestAnimationFrame(() => (parent.style.width = `${width}px`));
       }
     };
     document.addEventListener("mousemove", onMouseMove);
@@ -187,9 +223,15 @@ const Home = function () {
   return (
     <div className="home">
       <div className="head">
-        <div className="controls-2"></div>
+        <div
+          style={{ height: settings.view?.top?.height || 0 }}
+          className="controls-2"
+        ></div>
         <div className="controls">
-          <div className="container">
+          <div
+            style={{ height: settings.view?.top?.height || 0 }}
+            className="container"
+          >
             <div className="item">
               <FontSizeCommand
                 document={settings.document || new DocumentSettings()}
@@ -232,34 +274,21 @@ const Home = function () {
         <div className="right">
           <div
             onDragStart={() => false}
-            onMouseDown={(event) => {
-              const parent = event.currentTarget
-                .nextElementSibling as HTMLElement;
-              const xInitial = event.clientX;
-              const wInitial = parent.clientWidth;
-              window.onselectstart = () => false;
-              const onMouseMove = (event2: MouseEvent) => {
-                if (parent) {
-                  const xFinal = event2.clientX;
-                  const width = wInitial + (-xFinal + xInitial);
-                  // console.log([xInitial,xFinal,width]);
-                  window.requestAnimationFrame(
-                    () => (parent.style.width = `${width}px`)
-                  );
-                }
-              };
-              document.addEventListener("mousemove", onMouseMove);
-              document.addEventListener("mouseup", () => {
-                window.onselectstart = () => true;
-                document.removeEventListener("mousemove", onMouseMove);
-              });
-            }}
+            onMouseDown={(event) => onResizeRight(event)}
             className="bar"
           >
             &nbsp;
           </div>
-          <div className="controls">
-            <div className="floating">
+          <div
+            style={{ width: `${settings.view?.right.width || 0}px` }}
+            className="controls"
+          >
+            <div
+              style={{
+                height: `calc(100vh - ${settings.view?.top?.height || 0}px)`,
+              }}
+              className="floating"
+            >
               <div className="item">
                 <KeywordsComponent
                   onStateChanged={(to) => {
