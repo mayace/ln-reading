@@ -1,6 +1,6 @@
 import { Component } from "react";
 import { KeywordSettings } from "../../models/Settings";
-
+import React from "react";
 export class KeywordsComponent extends Component {
   props: {
     keywordList: KeywordSettings[];
@@ -14,8 +14,6 @@ export class KeywordsComponent extends Component {
       onStateChanged && onStateChanged([new KeywordSettings()], keywordList);
     }
   }
-
-  onChange() {}
 
   render(): JSX.Element {
     return (
@@ -59,11 +57,26 @@ export class KeywordsComponent extends Component {
   }
 }
 
-
-export  function KeywordItem ({ keyword, onChangeValue}: {keyword: KeywordSettings, onChangeValue?: (to:KeywordSettings)=>void}) {
-    const onChange = (to:any) => onChangeValue && onChangeValue({...keyword,...to})
-    return <div className="keyword-item">
-        <input onChange={ event =>  onChange({color: event.target.value})} type="color" value={keyword.color}/>
-        <input onChange={ event =>  onChange({text: event.target.value})} type="text" value={keyword.text} />
+export function KeywordItem({
+  keyword,
+  onChangeValue,
+}: {
+  keyword: KeywordSettings;
+  onChangeValue?: (to: KeywordSettings) => void;
+}) {
+  const onChange = (to: any) => onChangeValue && onChangeValue({ ...keyword, ...to });
+  return (
+    <div className="keyword-item">
+      <input
+        onChange={(event) => onChange({ color: event.target.value })}
+        type="color"
+        value={keyword.color}
+      />
+      <input
+        onChange={(event) => onChange({ text: event.target.value })}
+        type="text"
+        value={keyword.text}
+      />
     </div>
+  );
 }

@@ -1,20 +1,13 @@
-import { Component, createRef, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./Home.scss";
 import Encoding from "encoding-japanese";
+import { cloneDeep } from "lodash";
 import { Subscription } from "../models/Subscription";
-import {
-  Settings,
-  PageSettings,
-  DocumentSettings,
-  ViewSettings,
-} from "../models/Settings";
-import { CommandComponentFactory } from "../models/Command";
+import { Settings, PageSettings, DocumentSettings } from "../models/Settings";
 import { NavigationCommand } from "./Commands/Navegation";
-import { KeywordItem, KeywordsComponent } from "./Commands/Keyword";
+import { KeywordsComponent } from "./Commands/Keyword";
 
 import { FontSizeCommand } from "./Commands/FontSize";
-
-import { cloneDeep } from "lodash";
 
 const beforeSettingsSubs = new Subscription<Settings>();
 const subscription = new Subscription<Settings>();
@@ -26,17 +19,9 @@ subscription.subscribe({
 });
 const savedSettingsStr = window.localStorage.getItem("settings") || "";
 
-const commands = {
-  selected: ["furigana-visibility"],
-  available: ["furigana-visibility"],
-};
-const factory = new CommandComponentFactory();
-
 const Home = function () {
   const [settings, setSettings] = useState(
-    savedSettingsStr.trim().length > 0
-      ? (JSON.parse(savedSettingsStr) as Settings)
-      : new Settings()
+    savedSettingsStr.trim().length > 0 ? (JSON.parse(savedSettingsStr) as Settings) : new Settings()
   );
   const refTextContent = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
@@ -68,7 +53,7 @@ const Home = function () {
         if (from.document.fontSize !== to.document.fontSize) {
           const mid = refTextContent.current;
           if (mid) {
-            mid.style.fontSize = to.document.fontSize + "px";
+            mid.style.fontSize = `${to.document.fontSize}px`;
             console.log("fontsize updated");
           }
         }
@@ -77,17 +62,13 @@ const Home = function () {
         const fromHeight = from.view?.top.height || 0;
         // console.log([toHeight,fromHeight])
         if (toHeight !== fromHeight) {
-          const queryResult =
-            headRef.current?.querySelectorAll(".controls-2, .container") || [];
-          const queryRestult2 = document.querySelector(
-            ".right .floating"
-          ) as HTMLDivElement;
+          const queryResult = headRef.current?.querySelectorAll(".controls-2, .container") || [];
+          const queryRestult2 = document.querySelector(".right .floating") as HTMLDivElement;
 
           if (queryResult?.length > 0) {
             window.requestAnimationFrame(() => {
               queryResult.forEach(
-                (item: Element) =>
-                  ((item as HTMLDivElement).style.height = toHeight + "px")
+                (item: Element) => ((item as HTMLDivElement).style.height = `${toHeight}px`)
               );
             });
           }
@@ -103,14 +84,10 @@ const Home = function () {
         const fromWidth = from.view?.right.width || 0;
 
         if (toWidth !== fromWidth) {
-          const queryResult = document.querySelector(
-            ".right .controls"
-          ) as HTMLDivElement;
+          const queryResult = document.querySelector(".right .controls") as HTMLDivElement;
 
           if (queryResult) {
-            window.requestAnimationFrame(
-              () => (queryResult.style.width = toWidth + "px")
-            );
+            window.requestAnimationFrame(() => (queryResult.style.width = `${toWidth}px`));
           }
         }
       },
@@ -127,10 +104,7 @@ const Home = function () {
       if (textContentDOM) {
         textContentDOM.innerHTML = "";
         const query = html.querySelectorAll(settings.navigation.separator);
-        const posI = getTextContentPosI(
-          settings.navigation.pageI,
-          settings.navigation.length
-        );
+        const posI = getTextContentPosI(settings.navigation.pageI, settings.navigation.length);
         for (let index = posI; index < query.length; index++) {
           const item = query[index];
           if (index < posI + settings.navigation.length) {
@@ -140,10 +114,9 @@ const Home = function () {
           }
         }
 
-        //operacion 2
-        //realizarlo con el chain of responability patter
-        const keywordList =
-          settings.pages[settings.navigation.pageI].keyWordList;
+        // operacion 2
+        // realizarlo con el chain of responability patter
+        const keywordList = settings.pages[settings.navigation.pageI].keyWordList;
         if (keywordList.length > 0) {
           let finalText = textContentDOM.innerHTML;
           keywordList.forEach((item) => {
@@ -161,10 +134,7 @@ const Home = function () {
     } else {
       render(
         textContent,
-        getTextContentPosI(
-          settings.navigation.pageI,
-          settings.navigation.length
-        ),
+        getTextContentPosI(settings.navigation.pageI, settings.navigation.length),
         settings.navigation.length
       );
     }
@@ -192,10 +162,7 @@ const Home = function () {
         type: "string",
       });
 
-      const pos = getTextContentPosI(
-        settings.navigation.pageI,
-        settings.navigation.length
-      );
+      const pos = getTextContentPosI(settings.navigation.pageI, settings.navigation.length);
 
       render(textContent, pos, settings.navigation.length);
       window.localStorage.setItem(TEXT_CONTENT_KEY, textContent);
@@ -205,12 +172,9 @@ const Home = function () {
 
   const getTextContentPosI = (i: number, len: number) => i * len;
 
-  const onResizeHead = (
-    event: React.MouseEvent<HTMLDivElement, MouseEvent>
-  ) => {
+  const onResizeHead = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     const parent = event.currentTarget.previousElementSibling as HTMLDivElement;
-    const parent2 = event.currentTarget.parentElement
-      ?.previousElementSibling as HTMLDivElement;
+    const parent2 = event.currentTarget.parentElement?.previousElementSibling as HTMLDivElement;
 
     const xInitial = event.clientY;
     const wInitial = parent.clientHeight;
@@ -238,9 +202,7 @@ const Home = function () {
     });
   };
 
-  const onResizeRight = (
-    event: React.MouseEvent<HTMLDivElement, MouseEvent>
-  ) => {
+  const onResizeRight = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     const parent = event.currentTarget.nextElementSibling as HTMLElement;
     const xInitial = event.clientX;
     const wInitial = parent.clientWidth;
@@ -265,9 +227,6 @@ const Home = function () {
     });
   };
 
-  const rightCommandList = () =>
-    settings.commandList.filter((item) => item.layout === "right");
-
   const getCurrentPage = () => settings.pages[settings.navigation.pageI];
   return (
     <div className="home">
@@ -275,7 +234,7 @@ const Home = function () {
         <div
           // style={{ height: settings.view?.top?.height || 0 }}
           className="controls-2"
-        ></div>
+        />
         <div className="controls">
           <div
             // style={{ height: settings.view?.top?.height || 0 }}
@@ -296,20 +255,18 @@ const Home = function () {
             <div className="item">
               <input
                 type="file"
-                onChange={({ target }) =>
-                  target.files?.length ? readFile(target.files[0]) : 1
-                }
+                onChange={({ target }) => (target.files?.length ? readFile(target.files[0]) : 1)}
               />
             </div>
           </div>
-          <div className="bar" onMouseDown={onResizeHead}></div>
+          <div className="bar" onMouseDown={onResizeHead} />
         </div>
       </div>
 
       <div className="body">
-        <div className="left"></div>
+        <div className="left" />
         <div
-          onMouseUpCapture={(event) => {
+          onMouseUpCapture={() => {
             const textSelected = window.getSelection()?.toString();
             if (textSelected && textSelected.length > 0) {
               const page = getCurrentPage();
@@ -319,7 +276,7 @@ const Home = function () {
           }}
           className="mid"
           ref={refTextContent}
-        ></div>
+        />
         <div className="right">
           <div
             onDragStart={() => false}
@@ -341,7 +298,7 @@ const Home = function () {
               <div className="item">
                 <KeywordsComponent
                   onStateChanged={(to) => {
-                    const pages = settings.pages;
+                    const { pages } = settings;
                     const index = settings.navigation.pageI;
                     if (!pages[index]) {
                       pages[index] = new PageSettings();

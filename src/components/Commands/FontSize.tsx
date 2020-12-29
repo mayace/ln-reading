@@ -1,5 +1,7 @@
 import { DocumentSettings } from "../../models/Settings";
 import { ITryToChange } from "./TryToChangeHOC";
+import React from "react";
+
 
 export function FontSizeCommand(
   props: { document: DocumentSettings } & ITryToChange<DocumentSettings>
@@ -15,25 +17,19 @@ export function FontSizeCommand(
     <div className="font-size-command">
       <button
         type="button"
-        onClick={() =>
-          onChange({ fontSize: Math.max(0, document.fontSize - 1) })
-        }
+        onClick={() => onChange({ fontSize: Math.max(0, document.fontSize - 1) })}
       >
         -
       </button>
       <input
         type="text"
-        onChange={(event) =>
-          onChange({ fontSize: parseInt(event.currentTarget.value) || 0 })
-        }
+        onChange={(event) => onChange({ fontSize: parseInt(event.currentTarget.value) || 0 })}
         value={document.fontSize}
         style={{ width: "25px" }}
       />
       <button
         type="button"
-        onClick={() =>
-          onChange({ fontSize: Math.max(0, document.fontSize + 1) })
-        }
+        onClick={() => onChange({ fontSize: Math.max(0, document.fontSize + 1) })}
       >
         +
       </button>
