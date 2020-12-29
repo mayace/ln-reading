@@ -1,4 +1,4 @@
-import { Component, createRef, useEffect, useState } from "react";
+import { Component, createRef, useEffect, useRef, useState } from "react";
 import "./Home.scss";
 import Encoding from "encoding-japanese";
 import { Subscription } from "../models/Subscription";
@@ -14,6 +14,9 @@ import { KeywordItem, KeywordsComponent } from "./Commands/Keyword";
 
 import { FontSizeCommand } from "./Commands/FontSize";
 
+import { cloneDeep } from "lodash";
+
+const beforeSettingsSubs = new Subscription<Settings>();
 const subscription = new Subscription<Settings>();
 subscription.subscribe({
   next(context) {
@@ -35,30 +38,80 @@ const Home = function () {
       ? (JSON.parse(savedSettingsStr) as Settings)
       : new Settings()
   );
-  const refTextContent = createRef<HTMLDivElement>();
+  const refTextContent = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
 
   const TEXT_CONTENT_KEY = "textContentKey";
+
+  let timeoutId: number;
 
   const changeSettings = (to: any) => {
     const oldOne = settings;
     const newOne = { ...oldOne, ...to };
-    setSettings(newOne);
-    subscription.notifyAll({
-      to: newOne,
-      from: oldOne,
-    });
-  };
 
-  const changeBodyFontSizeTo = function (val: number) {
-    changeSettings({ fontSize: val });
+    beforeSettingsSubs.notifyAll({ to: newOne, from: oldOne });
+    window.clearTimeout(timeoutId);
+    timeoutId = window.setTimeout(() => {
+      // const ti = new Date();
+      setSettings(newOne);
+      // console.log(new Date().getTime() - ti.getTime());
+      subscription.notifyAll({
+        to: newOne,
+        from: oldOne,
+      });
+    }, 200);
   };
 
   useEffect(() => {
-    subscription.subscribe({
+    beforeSettingsSubs.subscribe({
       next({ from, to }) {
         if (from.document.fontSize !== to.document.fontSize) {
-          document.body.style.fontSize = to.document.fontSize + "px";
-          console.log("fontsize updated");
+          const mid = refTextContent.current;
+          if (mid) {
+            mid.style.fontSize = to.document.fontSize + "px";
+            console.log("fontsize updated");
+          }
+        }
+
+        const toHeight = to.view?.top.height || 0;
+        const fromHeight = from.view?.top.height || 0;
+        // console.log([toHeight,fromHeight])
+        if (toHeight !== fromHeight) {
+          const queryResult =
+            headRef.current?.querySelectorAll(".controls-2, .container") || [];
+          const queryRestult2 = document.querySelector(
+            ".right .floating"
+          ) as HTMLDivElement;
+
+          if (queryResult?.length > 0) {
+            window.requestAnimationFrame(() => {
+              queryResult.forEach(
+                (item: Element) =>
+                  ((item as HTMLDivElement).style.height = toHeight + "px")
+              );
+            });
+          }
+
+          if (queryRestult2) {
+            window.requestAnimationFrame(
+              () => (queryRestult2.style.height = `calc(100vh - ${toHeight}px)`)
+            );
+          }
+        }
+
+        const toWidth = to.view?.right.width || 0;
+        const fromWidth = from.view?.right.width || 0;
+
+        if (toWidth !== fromWidth) {
+          const queryResult = document.querySelector(
+            ".right .controls"
+          ) as HTMLDivElement;
+
+          if (queryResult) {
+            window.requestAnimationFrame(
+              () => (queryResult.style.width = toWidth + "px")
+            );
+          }
         }
       },
     });
@@ -152,10 +205,6 @@ const Home = function () {
 
   const getTextContentPosI = (i: number, len: number) => i * len;
 
-  const changeSeparator = function (value: string) {
-    changeSettings({ separator: value });
-  };
-
   const onResizeHead = (
     event: React.MouseEvent<HTMLDivElement, MouseEvent>
   ) => {
@@ -172,7 +221,7 @@ const Home = function () {
         const xFinal = event2.clientY;
         const height = wInitial + (xFinal - xInitial);
 
-        const view = { ...new ViewSettings(), ...settings.view };
+        const view = cloneDeep(settings.view);
         view.top.height = Math.max(0, height);
         changeSettings({ view });
 
@@ -201,10 +250,10 @@ const Home = function () {
         const xFinal = event2.clientX;
         const width = wInitial + (-xFinal + xInitial);
 
-        const view = { ...new ViewSettings(), ...settings.view };
+        const view = cloneDeep(settings.view);
         view.right.width = width;
-
         changeSettings({ view });
+
         // console.log([xInitial,xFinal,width]);
         // window.requestAnimationFrame(() => (parent.style.width = `${width}px`));
       }
@@ -222,14 +271,14 @@ const Home = function () {
   const getCurrentPage = () => settings.pages[settings.navigation.pageI];
   return (
     <div className="home">
-      <div className="head">
+      <div ref={headRef} className="head">
         <div
-          style={{ height: settings.view?.top?.height || 0 }}
+          // style={{ height: settings.view?.top?.height || 0 }}
           className="controls-2"
         ></div>
         <div className="controls">
           <div
-            style={{ height: settings.view?.top?.height || 0 }}
+            // style={{ height: settings.view?.top?.height || 0 }}
             className="container"
           >
             <div className="item">
@@ -280,13 +329,13 @@ const Home = function () {
             &nbsp;
           </div>
           <div
-            style={{ width: `${settings.view?.right.width || 0}px` }}
+            // style={{ width: `${settings.view?.right.width || 0}px` }}
             className="controls"
           >
             <div
-              style={{
-                height: `calc(100vh - ${settings.view?.top?.height || 0}px)`,
-              }}
+              // style={{
+              //   height: `calc(100vh - ${settings.view?.top?.height || 0}px)`,
+              // }}
               className="floating"
             >
               <div className="item">
