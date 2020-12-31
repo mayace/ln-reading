@@ -8,6 +8,13 @@ import { NavigationCommand } from "./Commands/Navegation";
 import { KeywordsComponent } from "./Commands/Keyword";
 
 import { FontSizeCommand } from "./Commands/FontSize";
+import {
+  ChangeFontSizeCommand,
+  ChangeTextCommand,
+  DocumentDOM,
+  HighLightTextCommand,
+} from "./DocumentDOM";
+import { CommandProccesor } from "../models/Command";
 
 const beforeSettingsSubs = new Subscription<Settings>();
 const subscription = new Subscription<Settings>();
@@ -25,6 +32,9 @@ const Home = function () {
   );
   const refTextContent = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
+
+  const documentDomInstance = useRef<DocumentDOM>(null);
+  const documentCommandProccesar = new CommandProccesor();
 
   const TEXT_CONTENT_KEY = "textContentKey";
 
@@ -48,16 +58,22 @@ const Home = function () {
   };
 
   useEffect(() => {
-    beforeSettingsSubs.subscribe({
-      next({ from, to }) {
+    subscription.subscribe({
+      next({ to, from }) {
         if (from.document.fontSize !== to.document.fontSize) {
-          const mid = refTextContent.current;
-          if (mid) {
-            mid.style.fontSize = `${to.document.fontSize}px`;
-            console.log("fontsize updated");
+          const instance = documentDomInstance.current;
+          if (instance) {
+            documentCommandProccesar.place(
+              new ChangeFontSizeCommand(instance, { fontSize: to.document.fontSize })
+            );
           }
         }
+        documentCommandProccesar.proccess();
+      },
+    });
 
+    beforeSettingsSubs.subscribe({
+      next({ from, to }) {
         const toHeight = to.view?.top.height || 0;
         const fromHeight = from.view?.top.height || 0;
         // console.log([toHeight,fromHeight])
@@ -96,48 +112,77 @@ const Home = function () {
 
   useEffect(() => {
     const textContent = window.localStorage.getItem(TEXT_CONTENT_KEY) || "";
-    if (settings.navigation.separator.length > 0) {
-      const textContent = window.localStorage.getItem(TEXT_CONTENT_KEY) || "";
-      const html = document.createElement("html");
-      html.innerHTML = textContent;
-      const textContentDOM = refTextContent.current;
-      if (textContentDOM) {
-        textContentDOM.innerHTML = "";
-        const query = html.querySelectorAll(settings.navigation.separator);
-        const posI = getTextContentPosI(settings.navigation.pageI, settings.navigation.length);
-        for (let index = posI; index < query.length; index++) {
-          const item = query[index];
-          if (index < posI + settings.navigation.length) {
-            textContentDOM.append(item);
-          } else {
-            break;
-          }
-        }
+    const html = document.createElement("html");
+    html.innerHTML = textContent;
 
-        // operacion 2
-        // realizarlo con el chain of responability patter
-        const keywordList = settings.pages[settings.navigation.pageI].keyWordList;
-        if (keywordList.length > 0) {
-          let finalText = textContentDOM.innerHTML;
-          keywordList.forEach((item) => {
-            if (item.text.trim().length > 0) {
-              finalText = finalText.replaceAll(
-                item.text,
-                `<span style="background-color: ${item.color};">${item.text}</span>`
-              );
-            }
-          });
+    const query = html.querySelectorAll(settings.navigation.separator);
+    const posI = getTextContentPosI(settings.navigation.pageI, settings.navigation.length);
+    const elementList = [];
 
-          textContentDOM.innerHTML = finalText;
-        }
+    for (let index = posI; index < query.length; index++) {
+      const item = query[index];
+      if (index < posI + settings.navigation.length) {
+        elementList.push(item);
+      } else {
+        break;
       }
-    } else {
-      render(
-        textContent,
-        getTextContentPosI(settings.navigation.pageI, settings.navigation.length),
-        settings.navigation.length
-      );
     }
+    const instance = documentDomInstance.current;
+    if (instance) {
+      documentCommandProccesar.place(new ChangeTextCommand(instance, { elementList }));
+      documentCommandProccesar.place(
+        new ChangeFontSizeCommand(instance, { fontSize: settings.document.fontSize })
+      );
+
+      const keywordList = settings.pages[settings.navigation.pageI].keyWordList;
+      documentCommandProccesar.place(
+        new HighLightTextCommand(instance, { keywordList: keywordList })
+      );
+
+      documentCommandProccesar.proccess();
+    }
+
+    // const textContent = window.localStorage.getItem(TEXT_CONTENT_KEY) || "";
+    // if (settings.navigation.separator.length > 0) {
+    // const textContent = window.localStorage.getItem(TEXT_CONTENT_KEY) || "";
+    // const html = document.createElement("html");
+    // html.innerHTML = textContent;
+    //   const textContentDOM = refTextContent.current;
+    //   if (textContentDOM) {
+    //     textContentDOM.innerHTML = "";
+    // const query = html.querySelectorAll(settings.navigation.separator);
+    // const posI = getTextContentPosI(settings.navigation.pageI, settings.navigation.length);
+    //     for (let index = posI; index < query.length; index++) {
+    //       const item = query[index];
+    //       if (index < posI + settings.navigation.length) {
+    //         textContentDOM.append(item);
+    //       } else {
+    //         break;
+    //       }
+    //     }
+    //     // operacion 2
+    //     // realizarlo con el chain of responability patter
+    //     const keywordList = settings.pages[settings.navigation.pageI].keyWordList;
+    //     if (keywordList.length > 0) {
+    //       let finalText = textContentDOM.innerHTML;
+    //       keywordList.forEach((item) => {
+    //         if (item.text.trim().length > 0) {
+    //           finalText = finalText.replaceAll(
+    //             item.text,
+    //             `<span style="background-color: ${item.color};">${item.text}</span>`
+    //           );
+    //         }
+    //       });
+    //       textContentDOM.innerHTML = finalText;
+    //     }
+    //   }
+    // } else {
+    //   render(
+    //     textContent,
+    //     getTextContentPosI(settings.navigation.pageI, settings.navigation.length),
+    //     settings.navigation.length
+    //   );
+    // }
   }, [settings]);
 
   const render = (fileContents: string, start: number, length?: number) => {
@@ -231,15 +276,9 @@ const Home = function () {
   return (
     <div className="home">
       <div ref={headRef} className="head">
-        <div
-          // style={{ height: settings.view?.top?.height || 0 }}
-          className="controls-2"
-        />
+        <div className="controls-2" />
         <div className="controls">
-          <div
-            // style={{ height: settings.view?.top?.height || 0 }}
-            className="container"
-          >
+          <div className="container">
             <div className="item">
               <FontSizeCommand
                 document={settings.document || new DocumentSettings()}
@@ -276,7 +315,11 @@ const Home = function () {
           }}
           className="mid"
           ref={refTextContent}
-        />
+        >
+          <div className="container">
+            <DocumentDOM ref={documentDomInstance} text={"hola mundo"} />
+          </div>
+        </div>
         <div className="right">
           <div
             onDragStart={() => false}
@@ -285,16 +328,8 @@ const Home = function () {
           >
             &nbsp;
           </div>
-          <div
-            // style={{ width: `${settings.view?.right.width || 0}px` }}
-            className="controls"
-          >
-            <div
-              // style={{
-              //   height: `calc(100vh - ${settings.view?.top?.height || 0}px)`,
-              // }}
-              className="floating"
-            >
+          <div className="controls">
+            <div className="floating">
               <div className="item">
                 <KeywordsComponent
                   onStateChanged={(to) => {
@@ -314,12 +349,6 @@ const Home = function () {
                   }
                 />
               </div>
-              {/* <div className="item">
-                            <KeywordItem keyword={ {text: settings.textSelected, color: "#808080", isGlobal: false}}/>
-                            <button type="button">
-                                <span className="icon">ddd</span>
-                            </button>
-                        </div> */}
             </div>
           </div>
         </div>
