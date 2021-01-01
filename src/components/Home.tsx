@@ -3,7 +3,13 @@ import "./Home.scss";
 import Encoding from "encoding-japanese";
 import { cloneDeep } from "lodash";
 import { Subscription } from "../models/Subscription";
-import { Settings, PageSettings, DocumentSettings } from "../models/Settings";
+import {
+  Settings,
+  PageSettings,
+  DocumentSettings,
+  KeywordSettings,
+  NavigationSettings,
+} from "../models/Settings";
 import { NavigationCommand } from "./Commands/Navegation";
 import { KeywordsComponent } from "./Commands/Keyword";
 
@@ -13,6 +19,7 @@ import {
   ChangeTextCommand,
   DocumentDOM,
   HighLightTextCommand,
+  IKeyword,
 } from "./DocumentDOM";
 import { CommandProccesor, ICommand } from "../models/Command";
 import { isEqual } from "lodash";
@@ -46,6 +53,14 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
   documentInstance = React.createRef<DocumentDOM>();
   commandProccesor = new CommandProccesor();
 
+  get currentPage(): PageSettings {
+    const {
+      pages,
+      navigation: { pageI },
+    } = this.state;
+    return pages[pageI] || new PageSettings();
+  }
+
   constructor(props: IHomeViewProps) {
     super(props);
 
@@ -78,30 +93,34 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
         to: {
           document: { fontSize },
           pages,
-          navigation: { pageI, separator,length },
+          navigation: { pageI, separator, length },
         },
         from,
       }) => {
-        const currentPage = pages[pageI];
-        const currentPageBefore = from.pages[pageI];
-        // console.log([currentPage, currentPageBefore]);
-        if (!isEqual(currentPage?.keyWordList, currentPageBefore?.keyWordList)) {
-          window.clearTimeout(delayHighlightId);
-          delayHighlightId = window.setTimeout(() => {
-            this.documentInstance.current?.highLightText(currentPage?.keyWordList || []);
-            console.log("update highlights");
-          }, 500);
+        if (fontSize !== from.document.fontSize) {
+          this.updateDocumentFontSize(fontSize);
         }
 
         const separatorChanged = separator !== from.navigation.separator;
         const pageIChanged = pageI !== from.navigation.pageI;
         const lengthChanged = length !== from.navigation.length;
         if (separatorChanged || pageIChanged || lengthChanged) {
-          // this.documentInstance.current?.changeText()
+          this.updateDocumentTextContent(this.props.contentStorageKey, {
+            pageI,
+            length,
+            separator,
+          });
         }
 
-        if (fontSize !== from.document.fontSize) {
-          this.documentInstance.current?.changeFontSize(fontSize);
+        const currentPage = pages[pageI];
+        const previousPage = from.pages[from.navigation.pageI];
+        // console.log([currentPage, previousPage]);
+        if (!isEqual(currentPage?.keyWordList, previousPage?.keyWordList)) {
+          window.clearTimeout(delayHighlightId);
+          delayHighlightId = window.setTimeout(() => {
+            this.updateDocumentHighlightText(currentPage?.keyWordList || []);
+            console.log("update highlights");
+          }, 500);
         }
       },
     });
@@ -224,8 +243,26 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
   }
 
   componentDidMount(): void {
-    this.updateTextContent(this.props.contentStorageKey);
+    this.updateDocumentFontSize(this.state.document.fontSize);
     this.updateViewSettings();
+    this.updateDocumentTextContent(this.props.contentStorageKey, this.state.navigation);
+    this.updateDocumentHighlightText(this.currentPage?.keyWordList || []);
+  }
+
+  updateDocumentHighlightText(keywordList: IKeyword[]): void {
+    const instance = this.documentInstance.current;
+    if (instance) {
+      this.commandProccesor.place(new HighLightTextCommand(instance, { keywordList }));
+      this.commandProccesor.proccess();
+    }
+  }
+
+  updateDocumentFontSize(fontSize: number): void {
+    const instance = this.documentInstance.current;
+    if (instance) {
+      this.commandProccesor.place(new ChangeFontSizeCommand(instance, { fontSize }));
+      this.commandProccesor.proccess();
+    }
   }
 
   updateViewSettings(): void {
@@ -240,8 +277,7 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
     this.commandProccesor.proccess();
   }
 
-  updateTextContent(keyStorage: string): void {
-    const { navigation, pages, document: documentSettings } = this.state;
+  updateDocumentTextContent(keyStorage: string, navigation: NavigationSettings): void {
     const textContent = window.localStorage.getItem(keyStorage)?.trim() || "";
     const instance = this.documentInstance.current;
 
@@ -261,12 +297,6 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
       }
 
       this.commandProccesor.place(new ChangeTextCommand(instance, { elementList }));
-      this.commandProccesor.place(
-        new ChangeFontSizeCommand(instance, { fontSize: documentSettings.fontSize })
-      );
-      const keywordList = pages[navigation.pageI].keyWordList;
-      this.commandProccesor.place(new HighLightTextCommand(instance, { keywordList: keywordList }));
-
       this.commandProccesor.proccess();
     }
   }

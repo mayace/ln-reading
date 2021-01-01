@@ -1,7 +1,6 @@
 import { Component, ReactElement, ReactNode } from "react";
 import { KeywordSettings } from "../../models/Settings";
 import React from "react";
-import { ITryToChange } from "./TryToChangeHOC";
 
 
 export class KeywordsComponent extends Component {
