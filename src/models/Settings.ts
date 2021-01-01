@@ -1,4 +1,3 @@
-import { ConcreteSubscription } from "./Subscription";
 
 export class NavigationSettings {
   length = 10;
@@ -27,9 +26,6 @@ export class Settings {
   pages: { [key: number]: PageSettings } = {};
   commandList: CommandSettings[] = [{ code: "keywords", layout: "right" }];
 
-  public getCurrentPage(): PageSettings {
-    return this.pages[this.navigation.pageI];
-  }
 }
 
 

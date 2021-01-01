@@ -1,6 +1,9 @@
-import { Component } from "react";
+import { Component, ReactElement, ReactNode } from "react";
 import { KeywordSettings } from "../../models/Settings";
 import React from "react";
+import { ITryToChange } from "./TryToChangeHOC";
+
+
 export class KeywordsComponent extends Component {
   props: {
     keywordList: KeywordSettings[];
@@ -8,14 +11,16 @@ export class KeywordsComponent extends Component {
   } = {
     keywordList: [],
   };
-  componentDidUpdate() {
+
+
+  componentDidUpdate(): void {
     const { keywordList, onStateChanged } = this.props;
     if (keywordList.length === 0) {
       onStateChanged && onStateChanged([new KeywordSettings()], keywordList);
     }
   }
 
-  render(): JSX.Element {
+  render(): ReactNode {
     return (
       <div className="keywords-component">
         <table>
@@ -63,7 +68,7 @@ export function KeywordItem({
 }: {
   keyword: KeywordSettings;
   onChangeValue?: (to: KeywordSettings) => void;
-}) {
+}): ReactElement {
   const onChange = (to: any) => onChangeValue && onChangeValue({ ...keyword, ...to });
   return (
     <div className="keyword-item">

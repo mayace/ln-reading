@@ -1,12 +1,10 @@
-import React from "react";
+import React, { ReactElement } from "react";
+import { HomeView } from "./components/Home";
 
-import Home from "./components/Home";
-function App() {
+export default function App(): ReactElement {
   return (
-    <div className="App">
-      <Home />
+    <div className="app">
+      <HomeView contentStorageKey={"textContentKey"} />
     </div>
   );
 }
-
-export default App;
