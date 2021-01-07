@@ -11,7 +11,7 @@ import {
   NavigationSettings,
 } from "../models/Settings";
 import { NavigationCommand } from "./Commands/Navegation";
-import { KeywordsComponent } from "./Commands/Keyword";
+import { KeywordListComponent } from "./Commands/Keyword";
 
 import { FontSizeCommand } from "./Commands/FontSize";
 import {
@@ -370,10 +370,30 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
     });
   }
 
+  onDocumentTextSelected(selection: string): void {
+    const {
+      navigation: { pageI },
+    } = this.state;
+    const pages = cloneDeep(this.state.pages);
+
+    const { keyWordList } = pages[pageI] || new PageSettings();
+
+    const lastIndex = Math.max(0, keyWordList.length - 1);
+    keyWordList[lastIndex].text = selection;
+
+    this.updateSettings({ pages });
+  }
+
   render(): ReactNode {
     const { document, navigation, pages } = this.state;
     const { pageI } = navigation;
     const currentPage = pages[pageI] || new PageSettings();
+    if (!pages[pageI]) {
+      pages[pageI] = currentPage;
+
+      currentPage.keyWordList.push(new KeywordSettings());
+      currentPage.keyWordList[0].color = Math.floor(Math.random() * 16777215).toString(16);
+    }
 
     return (
       <div className="home">
@@ -407,19 +427,13 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
         </div>
         <div className="body">
           <div className="left" />
-          <div
-            onMouseUpCapture={() => {
-              const textSelected = window.getSelection()?.toString();
-              if (textSelected && textSelected.length > 0) {
-                // const page = getCurrentPage();
-                // page.keyWordList[page.keyWordList.length - 1].text = textSelected;
-                // this.updateSettings({ pages: { ...pages } });
-              }
-            }}
-            className="mid"
-          >
+          <div className="mid">
             <div className="container">
-              <DocumentDOM ref={this.documentInstance} text={"hola mundo"} />
+              <DocumentDOM
+                ref={this.documentInstance}
+                KeywordList={this.currentPage.keyWordList}
+                onTextSelected={(selection) => this.onDocumentTextSelected(selection)}
+              />
             </div>
           </div>
           <div className="right">
@@ -433,7 +447,7 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
             <div className="controls">
               <div className="floating">
                 <div className="item">
-                  <KeywordsComponent
+                  <KeywordListComponent
                     onStateChanged={(to) => {
                       const newPages = cloneDeep(pages);
                       newPages[pageI].keyWordList = to;
