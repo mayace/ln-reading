@@ -1,28 +1,25 @@
-import React, { FC, ReactElement, ReactNode, useEffect, useRef, useState } from "react";
-import "./Home.scss";
-import Encoding from "encoding-japanese";
-import { cloneDeep } from "lodash";
-import { Subscription } from "../models/Subscription";
+// import Encoding from "encoding-japanese";
+import { cloneDeep, isEqual } from "lodash";
+import React, { ReactNode } from "react";
+import { CommandProccesor, ICommand } from "../models/Command";
 import {
-  Settings,
-  PageSettings,
   DocumentSettings,
   KeywordSettings,
-  NavigationSettings,
+  NavigationSettings, PageSettings, Settings
 } from "../models/Settings";
-import { NavigationCommand } from "./Commands/Navegation";
-import { KeywordListComponent } from "./Commands/Keyword";
-
+import { Subscription } from "../models/Subscription";
 import { FontSizeCommand } from "./Commands/FontSize";
+import { KeywordListComponent } from "./Commands/Keyword";
+import { NavigationCommand } from "./Commands/Navegation";
 import {
   ChangeFontSizeCommand,
   ChangeTextCommand,
   DocumentDOM,
   HighLightTextCommand,
-  IKeyword,
+  IKeyword
 } from "./DocumentDOM";
-import { CommandProccesor, ICommand } from "../models/Command";
-import { isEqual } from "lodash";
+import "./Home.scss";
+
 
 export interface IDimension {
   height: number;
@@ -310,7 +307,7 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
   //     refTextContent.current.innerHTML = fileContents.substr(start, length);
   //   }
   // };
-  readFile(file: File): void {
+  readFile(): void {
     // const reader = new FileReader();
     // reader.onload = ({ target }) => {
     //   const content = new Uint8Array(target?.result as ArrayBuffer);
@@ -417,7 +414,7 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
                 <input
                   type="file"
                   onChange={({ target }) =>
-                    target.files?.length ? this.readFile(target.files[0]) : 1
+                    target.files?.length ? this.readFile() : 1
                   }
                 />
               </div>
