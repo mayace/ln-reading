@@ -43,6 +43,10 @@ export class ExplorerComponent extends React.Component<
     this.updateState({ selectedFeedItem: item });
   }
 
+  fixRelativeUrl(content: string, domain: string): string {
+    return content.replace(/(src|href)="\/([^"]+)"/gm, `$1="${domain}/$2"`);
+  }
+
   render(): ReactNode {
     const { selectedFeedItem } = this.state;
 
@@ -63,18 +67,31 @@ export class ExplorerComponent extends React.Component<
         {selectedFeedItem && (
           <ModalComponent onClose={() => this.updateState({ selectedFeedItem: null })}>
             <div className="modal-card">
-              <div className="modal-card-head">
-                <div className="buttons">
+              <header className="modal-card-head">
+                <div className="control">
                   <a className="button is-primary">
                     <span className="icon">
-                      <i className="fas fa-plus"></i>
+                      <i className="fas fa-bookmark"></i>
                     </span>
                   </a>
-                  <div className="button is-text">{selectedFeedItem.title}</div>
                 </div>
-              </div>
+                <div className="px-3" style={{ flexGrow: 1 }}>
+                  <strong>{selectedFeedItem.title}</strong>
+                </div>
+                {/* <div>
+                  <button type="button" className="button is-danger is-rounded">
+                    <span className="icon">
+                      <i className="fas fa-times"></i>
+                    </span>
+                  </button>
+                </div> */}
+              </header>
               <div className="modal-card-body">
-                <div dangerouslySetInnerHTML={{ __html: selectedFeedItem.content }}></div>
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: this.fixRelativeUrl(selectedFeedItem.content, "https://nhkeasier.com"),
+                  }}
+                ></div>
               </div>
             </div>
           </ModalComponent>

@@ -9,7 +9,7 @@ export default function App(): ReactElement {
   return (
     <BrowserRouter>
       <div className="app">
-        <div className="navbar is-primary">
+        <div className="navbar">
           <div className="container">
             <div className="navbar-brand">
               <div className="navbar-item">
@@ -24,16 +24,27 @@ export default function App(): ReactElement {
             <div className="navbar-menu">
               <div className="navbar-start">
                 <NavLink activeClassName="is-active" className="navbar-item" to="/feed">
-                  Feed
+                  <span className="icon">
+                    <i className="fas fa-newspaper"></i>
+                  </span>
+                  {/* Feed */}
                 </NavLink>
                 <NavLink exact activeClassName="is-active" className="navbar-item" to="/">
-                  Home
+                  <span className="icon">
+                    <i className="fas fa-bookmark"></i>
+                  </span>
                 </NavLink>
                 <NavLink activeClassName="is-active" className="navbar-item" to="/reading">
-                  Reading
+                  <span className="icon">
+                    <i className="fas fa-book-reader"></i>
+                  </span>
+                  {/* <span>Reading</span> */}
                 </NavLink>
                 <NavLink activeClassName="is-active" className="navbar-item" to="/highlights">
-                  Highlights
+                  <span className="icon">
+                    <i className="fas fa-highlighter"></i>
+                  </span>
+                  {/* Highlights */}
                 </NavLink>
               </div>
             </div>

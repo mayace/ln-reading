@@ -35,7 +35,7 @@ export class ModalComponent extends React.Component<IModalProps> {
       <div className="modal is-active">
         <div className="modal-background"></div>
         <div ref={(item) => (this.contentElement = item)}>{this.props.children}</div>
-        <a onClick={this.props.onClose} className="modal-close"></a>
+        <a onClick={this.props.onClose} className="modal-close is-large"></a>
       </div>
     );
   }
