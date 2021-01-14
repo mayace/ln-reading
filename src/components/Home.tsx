@@ -5,9 +5,11 @@ import { CommandProccesor, ICommand } from "../models/Command";
 import {
   DocumentSettings,
   KeywordSettings,
-  NavigationSettings, PageSettings, Settings
+  NavigationSettings,
+  PageSettings,
+  Settings,
 } from "../models/Settings";
-import { Subscription } from "../models/Subscription";
+import { IContext, Subscription } from "../models/Subscription";
 import { FontSizeCommand } from "./Commands/FontSize";
 import { KeywordListComponent } from "./Commands/Keyword";
 import { NavigationCommand } from "./Commands/Navegation";
@@ -16,10 +18,9 @@ import {
   ChangeTextCommand,
   DocumentDOM,
   HighLightTextCommand,
-  IKeyword
+  IKeyword,
 } from "./DocumentDOM";
 import "./Home.scss";
-
 
 export interface IDimension {
   height: number;
@@ -45,7 +46,7 @@ export interface IHomeViewProps {
 export class HomeView extends React.Component<IHomeViewProps, Settings> {
   state = new Settings();
   beforeSettingsSubscription = new Subscription<Settings>();
-  settingsSubscription = new Subscription<Settings>();
+  settingsSubscription = new Subscription<IContext<Settings>>();
   delayTimeoutId: number | undefined;
   documentInstance = React.createRef<DocumentDOM>();
   commandProccesor = new CommandProccesor();
@@ -413,9 +414,7 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
               <div className="item">
                 <input
                   type="file"
-                  onChange={({ target }) =>
-                    target.files?.length ? this.readFile() : 1
-                  }
+                  onChange={({ target }) => (target.files?.length ? this.readFile() : 1)}
                 />
               </div>
             </div>

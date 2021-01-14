@@ -1,4 +1,10 @@
 import React, { ReactNode } from "react";
+import {
+  BookmarkLocalStorageService,
+  IService,
+  BookmarkSettings,
+  FeedItem,
+} from "../../services/Bookmark";
 import { ModalComponent } from "../modal/Modal";
 import { Feed, IFeedInfo, IFeedItemInfo } from "./Feed";
 
@@ -6,6 +12,7 @@ export class ExplorerComponentState {
   feedList: IFeedItemInfo[] = [];
   feedUrlList: string[] = [];
   selectedFeedItem: IFeedItemInfo | null = null;
+  bookmarkSettings = new BookmarkSettings();
 }
 export interface IExplorerComponentProps {
   test?: string;
@@ -17,6 +24,9 @@ export class ExplorerComponent extends React.Component<
 > {
   state = new ExplorerComponentState();
   feed = new Feed("");
+  bookmarkService: IService<BookmarkSettings> = new BookmarkLocalStorageService(
+    "bookmarkServiceKey"
+  );
 
   constructor(props: IExplorerComponentProps) {
     super(props);
@@ -37,6 +47,8 @@ export class ExplorerComponent extends React.Component<
     this.state.feedUrlList.forEach((item) =>
       this.feed.parse(item).then((body) => this.setState({ feedList: body.items }))
     );
+
+    this.bookmarkService.read().then((bookmarkSettings) => this.updateState({ bookmarkSettings }));
   }
 
   onPreview(item: IFeedItemInfo): void {
@@ -47,8 +59,34 @@ export class ExplorerComponent extends React.Component<
     return content.replace(/(src|href)="\/([^"]+)"/gm, `$1="${domain}/$2"`);
   }
 
+  bookmark(item: IFeedItemInfo): void {
+    const { bookmarkSettings } = this.state;
+    const entry = new FeedItem();
+    entry.guid = item.guid;
+    entry.isoDate = new Date(Date.parse(item.isoDate));
+    bookmarkSettings.FeedItemList.push(entry);
+
+    this.updateState({ bookmarkSettings });
+    this.bookmarkService.save(bookmarkSettings);
+
+    // this.bookmarkService.read().then((settings) => {
+    //   this.bookmarkService.save(settings);
+    // });
+  }
+  unbookmark(index: number): void {
+    const { bookmarkSettings } = this.state;
+    bookmarkSettings.FeedItemList.splice(index, 1);
+
+    this.updateState({ bookmarkSettings });
+    this.bookmarkService.save(bookmarkSettings);
+  }
+
   render(): ReactNode {
-    const { selectedFeedItem } = this.state;
+    const { selectedFeedItem, bookmarkSettings } = this.state;
+    const savedIndex = bookmarkSettings.FeedItemList.findIndex(
+      (item) => item.guid === selectedFeedItem?.guid
+    );
+    const savedFeedItem = bookmarkSettings.FeedItemList[savedIndex];
 
     return (
       <div className="explorer-component">
@@ -69,22 +107,26 @@ export class ExplorerComponent extends React.Component<
             <div className="modal-card">
               <header className="modal-card-head">
                 <div className="control">
-                  <a className="button is-primary">
-                    <span className="icon">
-                      <i className="fas fa-bookmark"></i>
-                    </span>
-                  </a>
+                  {savedFeedItem ? (
+                    <a onClick={() => this.unbookmark(savedIndex)} className="button is-danger">
+                      <span className="icon">
+                        <i className="fas fa-ban"></i>
+                      </span>
+                    </a>
+                  ) : (
+                    <a
+                      onClick={() => this.bookmark(selectedFeedItem)}
+                      className="button is-primary"
+                    >
+                      <span className="icon">
+                        <i className="fas fa-bookmark"></i>
+                      </span>
+                    </a>
+                  )}
                 </div>
                 <div className="px-3" style={{ flexGrow: 1 }}>
                   <strong>{selectedFeedItem.title}</strong>
                 </div>
-                {/* <div>
-                  <button type="button" className="button is-danger is-rounded">
-                    <span className="icon">
-                      <i className="fas fa-times"></i>
-                    </span>
-                  </button>
-                </div> */}
               </header>
               <div className="modal-card-body">
                 <div

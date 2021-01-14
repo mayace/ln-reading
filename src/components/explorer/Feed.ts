@@ -12,6 +12,7 @@ export interface IFeedItemInfo {
     link: string;
     isoDate: string
     content: string;
+    guid: string;
 }
 
 export interface IFeed<T, U> {
@@ -26,7 +27,7 @@ export class Feed implements IFeed<IFeedInfo, IFeedItemInfo>{
     async parse(url?: string): Promise<IFeedInfo & RssParser.Output<IFeedItemInfo>> {
         if (url)
             this.url = url;
-        return await this.parser.parseURL(`${this.proxy}/${this.url}`);
+        return await this.parser.parseURL(`${this.url}`);
     }
 }
 // export class Feed implements BaseFeed {
