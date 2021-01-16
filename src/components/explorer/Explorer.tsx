@@ -1,12 +1,7 @@
 import React, { ReactNode } from "react";
-import {
-  BookmarkLocalStorageService,
-  IService,
-  BookmarkSettings,
-  FeedItem,
-} from "../../services/Bookmark";
+import { BookmarkLocalStorageService, IService, BookmarkSettings } from "../../services/Bookmark";
 import { ModalComponent } from "../modal/Modal";
-import { Feed, IFeedInfo, IFeedItemInfo } from "./Feed";
+import { Feed, FeedItem, IFeedItemInfo } from "./Feed";
 
 export class ExplorerComponentState {
   feedList: IFeedItemInfo[] = [];
@@ -59,15 +54,18 @@ export class ExplorerComponent extends React.Component<
     return content.replace(/(src|href)="\/([^"]+)"/gm, `$1="${domain}/$2"`);
   }
 
-  bookmark(item: IFeedItemInfo): void {
+  bookmark(item: IFeedItemInfo, content: string): void {
     const { bookmarkSettings } = this.state;
-    const entry = new FeedItem();
-    entry.guid = item.guid;
-    entry.isoDate = new Date(Date.parse(item.isoDate));
+    const entry: FeedItem = { ...new FeedItem(), ...item };
+
+    entry.content = entry.guid;
+    entry.contentSnippet = entry.contentSnippet.substr(0, 95);
     bookmarkSettings.FeedItemList.push(entry);
 
     this.updateState({ bookmarkSettings });
     this.bookmarkService.save(bookmarkSettings);
+
+    window.localStorage.setItem(entry.guid, content);
 
     // this.bookmarkService.read().then((settings) => {
     //   this.bookmarkService.save(settings);
@@ -75,10 +73,12 @@ export class ExplorerComponent extends React.Component<
   }
   unbookmark(index: number): void {
     const { bookmarkSettings } = this.state;
-    bookmarkSettings.FeedItemList.splice(index, 1);
+    const deleted = bookmarkSettings.FeedItemList.splice(index, 1);
 
     this.updateState({ bookmarkSettings });
     this.bookmarkService.save(bookmarkSettings);
+
+    deleted.forEach((item) => window.localStorage.removeItem(item.guid));
   }
 
   render(): ReactNode {
@@ -87,6 +87,10 @@ export class ExplorerComponent extends React.Component<
       (item) => item.guid === selectedFeedItem?.guid
     );
     const savedFeedItem = bookmarkSettings.FeedItemList[savedIndex];
+
+    const selectedContentFixed = selectedFeedItem
+      ? this.fixRelativeUrl(selectedFeedItem.content, "https://nhkeasier.com")
+      : "";
 
     return (
       <div className="explorer-component">
@@ -115,7 +119,7 @@ export class ExplorerComponent extends React.Component<
                     </a>
                   ) : (
                     <a
-                      onClick={() => this.bookmark(selectedFeedItem)}
+                      onClick={() => this.bookmark(selectedFeedItem, selectedContentFixed)}
                       className="button is-primary"
                     >
                       <span className="icon">
@@ -131,7 +135,7 @@ export class ExplorerComponent extends React.Component<
               <div className="modal-card-body">
                 <div
                   dangerouslySetInnerHTML={{
-                    __html: this.fixRelativeUrl(selectedFeedItem.content, "https://nhkeasier.com"),
+                    __html: selectedContentFixed,
                   }}
                 ></div>
               </div>

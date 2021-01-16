@@ -1,6 +1,21 @@
 
 import RssParser from "rss-parser";
 
+export class FeedItem implements IFeedItemInfo {
+    contentSnippet = "";
+    title = "";
+    description = "";
+    link = "";
+    isoDate = "";
+    //becames the contentKey where is stored
+    content = "";
+    guid = ""
+    isPinned = false
+    views = 0
+    createdAt = new Date()
+    keywordListKey = ""
+}
+
 export interface IFeedInfo {
     title: string;
     description: string;
@@ -13,6 +28,7 @@ export interface IFeedItemInfo {
     isoDate: string
     content: string;
     guid: string;
+    contentSnippet: string
 }
 
 export interface IFeed<T, U> {

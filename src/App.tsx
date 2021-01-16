@@ -55,7 +55,7 @@ export default function App(): ReactElement {
           <div className="container">
             <Switch>
               <Route exact path="/">
-                <PanelComponent />
+                <PanelComponent bookmarkServiceKey="bookmarkServiceKey" />
               </Route>
               <Route path="/feed">
                 <ExplorerComponent />
