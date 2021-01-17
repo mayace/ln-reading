@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react";
-import { HomeView } from "./components/Home";
+import { ReadingComponent } from "./components/reading/Reading";
 import "./App.scss";
 import { Route, BrowserRouter, Switch, NavLink } from "react-router-dom";
 import { PanelComponent } from "./components/panel/Panel";
@@ -54,14 +54,21 @@ export default function App(): ReactElement {
         <div className="section">
           <div className="container">
             <Switch>
-              <Route exact path="/">
-                <PanelComponent bookmarkServiceKey="bookmarkServiceKey" />
-              </Route>
+              <Route
+                exact
+                path="/"
+                render={(props) => {
+                  return <PanelComponent bookmarkServiceKey="bookmarkServiceKey" {...props} />;
+                }}
+              ></Route>
               <Route path="/feed">
                 <ExplorerComponent />
               </Route>
               <Route path="/reading">
-                <HomeView contentStorageKey={"textContentKey"} />
+                <ReadingComponent
+                  bookmarkServiceKey="bookmarkServiceKey"
+                  contentStorageKey={"textContentKey"}
+                />
               </Route>
               <Route path="*">Not found!</Route>
             </Switch>

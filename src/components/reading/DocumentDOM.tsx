@@ -1,7 +1,7 @@
 import { inRange } from "lodash";
 import { homedir } from "os";
 import React, { ReactNode } from "react";
-import { ICommand } from "../models/Command";
+import { ICommand } from "../../models/Command";
 
 export class DocumentDOMState {
   fontSize = 14;

@@ -1,6 +1,6 @@
 import { cloneDeep } from "lodash";
 import React, { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { RouteComponentProps } from "react-router-dom";
 import { Subscription } from "../../models/Subscription";
 import {
   BookmarkDateMode,
@@ -22,13 +22,13 @@ export interface IPanelSubscription {
   to: BookmarkSettings;
 }
 
-export class PanelComponent extends React.Component<IPanelProps, PanelState> {
+export class PanelComponent extends React.Component<IPanelProps & RouteComponentProps, PanelState> {
   state: PanelState = new PanelState();
 
   bookmarkService: BookmarkLocalStorageService;
   subscription = new Subscription<IPanelSubscription>();
 
-  constructor(props: IPanelProps) {
+  constructor(props: IPanelProps & RouteComponentProps) {
     super(props);
     this.bookmarkService = new BookmarkLocalStorageService(props.bookmarkServiceKey);
     this.subscription.subscribe({
@@ -49,9 +49,10 @@ export class PanelComponent extends React.Component<IPanelProps, PanelState> {
   updateBookmarkSettings(change: Partial<BookmarkSettings>): void {
     const from = cloneDeep(this.state.bookmarkSettings);
     const bookmarkSettings = { ...this.state.bookmarkSettings, ...change };
-    this.updateState({ bookmarkSettings }).then(() =>
-      this.subscription.notifyAll({ from, to: bookmarkSettings })
-    );
+    this.updateState({ bookmarkSettings }).then(() => {
+      this.subscription.notifyAll({ from, to: bookmarkSettings });
+      this.props.history.push("/reading");
+    });
   }
 
   render(): ReactNode {
@@ -140,12 +141,9 @@ export class PanelComponent extends React.Component<IPanelProps, PanelState> {
               >
                 <div className="box">
                   <div className="title is-5">
-                    <Link
-                      onClick={() => this.updateBookmarkSettings({ selectedGuid: item.guid })}
-                      to="/reading"
-                    >
+                    <a onClick={() => this.updateBookmarkSettings({ selectedGuid: item.guid })}>
                       {item.title}
-                    </Link>
+                    </a>
                   </div>
                   <div>{item.contentSnippet} ...</div>
                 </div>

@@ -1,18 +1,20 @@
 // import Encoding from "encoding-japanese";
 import { cloneDeep, isEqual } from "lodash";
 import React, { ReactNode } from "react";
-import { CommandProccesor, ICommand } from "../models/Command";
+import { CommandProccesor, ICommand } from "../../models/Command";
 import {
   DocumentSettings,
   KeywordSettings,
   NavigationSettings,
   PageSettings,
   Settings,
-} from "../models/Settings";
-import { IContext, Subscription } from "../models/Subscription";
-import { FontSizeCommand } from "./Commands/FontSize";
-import { KeywordListComponent } from "./Commands/Keyword";
-import { NavigationCommand } from "./Commands/Navegation";
+} from "../../models/Settings";
+import { IContext, Subscription } from "../../models/Subscription";
+import { BookmarkLocalStorageService, BookmarkSettings, IService } from "../../services/Bookmark";
+import { FontSizeCommand } from "../Commands/FontSize";
+import { KeywordListComponent } from "../Commands/Keyword";
+import { NavigationCommand } from "../Commands/Navegation";
+import { FeedItem } from "../explorer/Feed";
 import {
   ChangeFontSizeCommand,
   ChangeTextCommand,
@@ -27,62 +29,77 @@ export interface IDimension {
   width: number;
 }
 export class UpdateTopHeightCommand implements ICommand {
-  constructor(private home: HomeView, private params: IDimension) {}
+  constructor(private home: ReadingComponent, private params: IDimension) {}
   execute(): void {
     this.home.updateTopHeight(this.params.height);
   }
 }
 export class UpdateRightWidthCommand implements ICommand {
-  constructor(private home: HomeView, private params: IDimension) {}
+  constructor(private home: ReadingComponent, private params: IDimension) {}
   execute(): void {
     this.home.updateRightWidth(this.params.width);
   }
 }
 
-export interface IHomeViewProps {
+export interface IReadingProps {
   contentStorageKey: string;
+  bookmarkServiceKey: string;
+}
+export class ReadingState {
+  bookmarkSettings = new BookmarkSettings();
+  readingSettings = new Settings();
 }
 
-export class HomeView extends React.Component<IHomeViewProps, Settings> {
-  state = new Settings();
+export class ReadingComponent extends React.Component<IReadingProps, ReadingState> {
   beforeSettingsSubscription = new Subscription<Settings>();
   settingsSubscription = new Subscription<IContext<Settings>>();
   delayTimeoutId: number | undefined;
   documentInstance = React.createRef<DocumentDOM>();
   commandProccesor = new CommandProccesor();
 
+  serviceBookmark: IService<BookmarkSettings>;
+
   get currentPage(): PageSettings {
     const {
-      pages,
-      navigation: { pageI },
+      readingSettings: {
+        pages,
+        navigation: { pageI },
+      },
     } = this.state;
     return pages[pageI] || new PageSettings();
   }
 
-  constructor(props: IHomeViewProps) {
+  get currentFeed(): FeedItem | undefined {
+    const { selectedGuid, FeedItemList } = this.state.bookmarkSettings;
+    return FeedItemList.find((item) => item.guid === selectedGuid);
+  }
+
+  constructor(props: IReadingProps) {
     super(props);
 
+    this.state = new ReadingState();
     this.onResizeHead = this.onResizeHead.bind(this);
     this.onResizeRight = this.onResizeRight.bind(this);
+    this.serviceBookmark = new BookmarkLocalStorageService(this.props.bookmarkServiceKey);
 
     // recover setting
-    const savedSettingsStr = window.localStorage.getItem("settings")?.trim() || "";
-    if (savedSettingsStr) {
-      this.state = { ...this.state, ...JSON.parse(savedSettingsStr) };
-    }
+    // const savedSettingsStr = window.localStorage.getItem("settings")?.trim() || "";
+    // if (savedSettingsStr) {
+    //   this.state = { ...this.state, ...JSON.parse(savedSettingsStr) };
+    // }
 
     // subscriptions
-    const delaySaveSettigns = 1000;
-    let delaySaveSettingsId: number | undefined;
-    this.settingsSubscription.subscribe({
-      next({ to }) {
-        window.clearTimeout(delaySaveSettingsId);
-        delaySaveSettingsId = window.setTimeout(() => {
-          window.localStorage.setItem("settings", JSON.stringify(to));
-          console.log("settings saved");
-        }, delaySaveSettigns);
-      },
-    });
+    // const delaySaveSettigns = 1000;
+    // let delaySaveSettingsId: number | undefined;
+    // this.settingsSubscription.subscribe({
+    //   next({ to }) {
+    //     window.clearTimeout(delaySaveSettingsId);
+    //     delaySaveSettingsId = window.setTimeout(() => {
+    //       window.localStorage.setItem("settings", JSON.stringify(to));
+    //       console.log("settings saved");
+    //     }, delaySaveSettigns);
+    //   },
+    // });
 
     // document
     let delayHighlightId: number | undefined;
@@ -148,11 +165,12 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
   // const headRef = useRef<HTMLDivElement>(null);
   // let timeoutId: number;
   updateSettings<K extends keyof Settings>(to: Pick<Settings, K>): void {
-    const from = cloneDeep(this.state);
-    this.setState(to, () => {
-      this.settingsSubscription.notifyAll({ to: this.state, from });
+    const from = cloneDeep(this.state.readingSettings);
+    this.setState({ readingSettings: { ...this.state.readingSettings, ...to } }, () => {
+      this.settingsSubscription.notifyAll({ to: this.state.readingSettings, from });
     });
 
+    //old version
     // const oldOne = this.state;
     // const newOne = { ...cloneDeep(oldOne), ...to };
 
@@ -240,11 +258,24 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
     }
   }
 
+  updateState<k extends keyof ReadingState>(change: Pick<ReadingState, k>): Promise<void> {
+    return new Promise((resolve) => {
+      this.setState(change, () => resolve());
+    });
+  }
   componentDidMount(): void {
-    this.updateDocumentFontSize(this.state.document.fontSize);
-    this.updateViewSettings();
-    this.updateDocumentTextContent(this.props.contentStorageKey, this.state.navigation);
-    this.updateDocumentHighlightText(this.currentPage?.keyWordList || []);
+    this.serviceBookmark
+      .read()
+      .then((bookmarkSettings) => this.updateState({ bookmarkSettings }))
+      .then(() => {
+        // this.updateDocumentFontSize(this.state.readingSettings.document.fontSize);
+        // this.updateViewSettings();
+        this.updateDocumentTextContent(this.state.bookmarkSettings.selectedGuid || "", {
+          ...this.state.readingSettings.navigation,
+          separator: "p",
+        });
+        // this.updateDocumentHighlightText(this.currentPage?.keyWordList || []);
+      });
   }
 
   updateDocumentHighlightText(keywordList: IKeyword[]): void {
@@ -264,7 +295,7 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
   }
 
   updateViewSettings(): void {
-    const { view } = this.state;
+    const { view } = this.state.readingSettings;
     this.commandProccesor.place(
       new UpdateTopHeightCommand(this, { height: view.top.height, width: 0 })
     );
@@ -335,7 +366,7 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
       if (parent && parent2) {
         const xFinal = event2.clientY;
         const height = wInitial + (xFinal - xInitial);
-        const view = cloneDeep(this.state.view);
+        const view = cloneDeep(this.state.readingSettings.view);
         view.top.height = Math.max(0, height);
         this.updateSettings({ view });
       }
@@ -356,7 +387,7 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
       if (parent) {
         const xFinal = event2.clientX;
         const width = wInitial + (-xFinal + xInitial);
-        const view = cloneDeep(this.state.view);
+        const view = cloneDeep(this.state.readingSettings.view);
         view.right.width = width;
         this.updateSettings({ view });
       }
@@ -370,9 +401,11 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
 
   onDocumentTextSelected(selection: string): void {
     const {
-      navigation: { pageI },
+      readingSettings: {
+        navigation: { pageI },
+      },
     } = this.state;
-    const pages = cloneDeep(this.state.pages);
+    const pages = cloneDeep(this.state.readingSettings.pages);
 
     const { keyWordList } = pages[pageI] || new PageSettings();
 
@@ -383,7 +416,9 @@ export class HomeView extends React.Component<IHomeViewProps, Settings> {
   }
 
   render(): ReactNode {
-    const { document, navigation, pages } = this.state;
+    const {
+      readingSettings: { document, navigation, pages },
+    } = this.state;
     const { pageI } = navigation;
     const currentPage = pages[pageI] || new PageSettings();
     if (!pages[pageI]) {
