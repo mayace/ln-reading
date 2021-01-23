@@ -4,8 +4,28 @@ import "./App.scss";
 import { Route, BrowserRouter, Switch, NavLink } from "react-router-dom";
 import { PanelComponent } from "./components/panel/Panel";
 import { ExplorerComponent } from "./components/explorer/Explorer";
+import { ICrudLikeService, IService } from "./services/IService";
+import { BookmarkSettings } from "./services/Bookmark";
+import { BookmarkLocalStorageService } from "./services/BookmarkLocalStorageService";
+import { KeywordSettings } from "./models/Settings";
+import { KeywordLocalStorageService } from "./services/KeywordService";
+import {
+  FeedItemLocalStorageCrudService,
+  KeywordLocalStorageCrudService,
+} from "./services/LocalStorageService";
+import { FeedItem } from "./components/explorer/Feed";
 
 export default function App(): ReactElement {
+  const bookmarkService: IService<BookmarkSettings> = new BookmarkLocalStorageService(
+    "bookmarkServiceKey"
+  );
+  const keywordService: ICrudLikeService<KeywordSettings> = new KeywordLocalStorageCrudService(
+    "keywordServiceKey"
+  );
+  const feedItemService: ICrudLikeService<FeedItem> = new FeedItemLocalStorageCrudService(
+    "feedItemService"
+  );
+
   return (
     <BrowserRouter>
       <div className="app">
@@ -66,7 +86,9 @@ export default function App(): ReactElement {
               </Route>
               <Route path="/reading">
                 <ReadingComponent
-                  bookmarkServiceKey="bookmarkServiceKey"
+                  keywordService={keywordService}
+                  bookmarkService={bookmarkService}
+                  feedItemService={feedItemService}
                   contentStorageKey={"textContentKey"}
                 />
               </Route>

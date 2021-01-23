@@ -1,5 +1,7 @@
 import React, { ReactNode } from "react";
-import { BookmarkLocalStorageService, IService, BookmarkSettings } from "../../services/Bookmark";
+import { BookmarkSettings } from "../../services/Bookmark";
+import { BookmarkLocalStorageService } from "../../services/BookmarkLocalStorageService";
+import { IService } from "../../services/IService";
 import { ModalComponent } from "../modal/Modal";
 import { Feed, FeedItem, IFeedItemInfo } from "./Feed";
 

@@ -1,6 +1,11 @@
 
 import RssParser from "rss-parser";
 
+export interface IReadingKeywordItem {
+    keywordId: number
+    pageIndex: number
+}
+
 export class FeedItem implements IFeedItemInfo {
     contentSnippet = "";
     title = "";
@@ -13,7 +18,7 @@ export class FeedItem implements IFeedItemInfo {
     isPinned = false
     views = 0
     createdAt = new Date()
-    keywordListKey = ""
+    keywordList: IReadingKeywordItem[] = []
 }
 
 export interface IFeedInfo {

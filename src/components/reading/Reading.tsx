@@ -1,16 +1,17 @@
 // import Encoding from "encoding-japanese";
-import { cloneDeep, isEqual } from "lodash";
+import { cloneDeep } from "lodash";
 import React, { ReactNode } from "react";
 import { CommandProccesor, ICommand } from "../../models/Command";
 import {
   DocumentSettings,
   KeywordSettings,
   NavigationSettings,
-  PageSettings,
-  Settings,
+  ViewSettings,
 } from "../../models/Settings";
+
 import { IContext, Subscription } from "../../models/Subscription";
-import { BookmarkLocalStorageService, BookmarkSettings, IService } from "../../services/Bookmark";
+import { BookmarkSettings } from "../../services/Bookmark";
+import { ICrudLikeService, IService } from "../../services/IService";
 import { FontSizeCommand } from "../Commands/FontSize";
 import { KeywordListComponent } from "../Commands/Keyword";
 import { NavigationCommand } from "../Commands/Navegation";
@@ -22,7 +23,7 @@ import {
   HighLightTextCommand,
   IKeyword,
 } from "./DocumentDOM";
-import "./Home.scss";
+// import "./Reading.scss";
 
 export interface IDimension {
   height: number;
@@ -43,36 +44,41 @@ export class UpdateRightWidthCommand implements ICommand {
 
 export interface IReadingProps {
   contentStorageKey: string;
-  bookmarkServiceKey: string;
+  keywordService: ICrudLikeService<KeywordSettings>;
+  bookmarkService: IService<BookmarkSettings>;
+  feedItemService: ICrudLikeService<FeedItem>;
 }
 export class ReadingState {
-  bookmarkSettings = new BookmarkSettings();
-  readingSettings = new Settings();
+  readingSettings = new ReadingSettings();
+  feedItem?: FeedItem;
+  keywordList: KeywordSettings[] = [];
+  selectedText = "";
+}
+
+export class ReadingSettings {
+  document = new DocumentSettings();
+  view = new ViewSettings();
+  navigation = new NavigationSettings();
 }
 
 export class ReadingComponent extends React.Component<IReadingProps, ReadingState> {
-  beforeSettingsSubscription = new Subscription<Settings>();
-  settingsSubscription = new Subscription<IContext<Settings>>();
+  beforeSettingsSubscription = new Subscription<ReadingSettings>();
+  settingsSubscription = new Subscription<IContext<ReadingSettings>>();
   delayTimeoutId: number | undefined;
   documentInstance = React.createRef<DocumentDOM>();
   commandProccesor = new CommandProccesor();
 
-  serviceBookmark: IService<BookmarkSettings>;
+  feedItemSubscription = new Subscription<IContext<FeedItem>>();
 
-  get currentPage(): PageSettings {
-    const {
-      readingSettings: {
-        pages,
-        navigation: { pageI },
-      },
-    } = this.state;
-    return pages[pageI] || new PageSettings();
-  }
-
-  get currentFeed(): FeedItem | undefined {
-    const { selectedGuid, FeedItemList } = this.state.bookmarkSettings;
-    return FeedItemList.find((item) => item.guid === selectedGuid);
-  }
+  // get currentPage(): PageSettings {
+  //   const {
+  //     readingSettings: {
+  //       pages,
+  //       navigation: { pageI },
+  //     },
+  //   } = this.state;
+  //   return pages[pageI] || new PageSettings();
+  // }
 
   constructor(props: IReadingProps) {
     super(props);
@@ -80,7 +86,6 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
     this.state = new ReadingState();
     this.onResizeHead = this.onResizeHead.bind(this);
     this.onResizeRight = this.onResizeRight.bind(this);
-    this.serviceBookmark = new BookmarkLocalStorageService(this.props.bookmarkServiceKey);
 
     // recover setting
     // const savedSettingsStr = window.localStorage.getItem("settings")?.trim() || "";
@@ -102,12 +107,10 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
     // });
 
     // document
-    let delayHighlightId: number | undefined;
     this.settingsSubscription.subscribe({
       next: ({
         to: {
           document: { fontSize },
-          pages,
           navigation: { pageI, separator, length },
         },
         from,
@@ -127,16 +130,18 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
           });
         }
 
-        const currentPage = pages[pageI];
-        const previousPage = from.pages[from.navigation.pageI];
-        // console.log([currentPage, previousPage]);
-        if (!isEqual(currentPage?.keyWordList, previousPage?.keyWordList)) {
-          window.clearTimeout(delayHighlightId);
-          delayHighlightId = window.setTimeout(() => {
-            this.updateDocumentHighlightText(currentPage?.keyWordList || []);
-            console.log("update highlights");
-          }, 500);
-        }
+        // hightlight fired
+        // let delayHighlightId: number | undefined;
+        // const currentPage = pages[pageI];
+        // const previousPage = from.pages[from.navigation.pageI];
+        // // console.log([currentPage, previousPage]);
+        // if (!isEqual(currentPage?.keyWordList, previousPage?.keyWordList)) {
+        //   window.clearTimeout(delayHighlightId);
+        //   delayHighlightId = window.setTimeout(() => {
+        //     this.updateDocumentHighlightText(currentPage?.keyWordList || []);
+        //     console.log("update highlights");
+        //   }, 500);
+        // }
       },
     });
 
@@ -164,7 +169,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
   // const refTextContent = useRef<HTMLDivElement>(null);
   // const headRef = useRef<HTMLDivElement>(null);
   // let timeoutId: number;
-  updateSettings<K extends keyof Settings>(to: Pick<Settings, K>): void {
+  updateSettings<K extends keyof ReadingSettings>(to: Pick<ReadingSettings, K>): void {
     const from = cloneDeep(this.state.readingSettings);
     this.setState({ readingSettings: { ...this.state.readingSettings, ...to } }, () => {
       this.settingsSubscription.notifyAll({ to: this.state.readingSettings, from });
@@ -264,18 +269,24 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
     });
   }
   componentDidMount(): void {
-    this.serviceBookmark
-      .read()
-      .then((bookmarkSettings) => this.updateState({ bookmarkSettings }))
-      .then(() => {
-        // this.updateDocumentFontSize(this.state.readingSettings.document.fontSize);
-        // this.updateViewSettings();
-        this.updateDocumentTextContent(this.state.bookmarkSettings.selectedGuid || "", {
+    const { bookmarkService } = this.props;
+
+    bookmarkService.read().then((bookmarkSettings) => {
+      const feedItem = bookmarkSettings.FeedItemList.find(
+        (item) => item.guid === bookmarkSettings.selectedGuid
+      );
+      if (feedItem) {
+        this.updateDocumentTextContent(feedItem.guid || "", {
           ...this.state.readingSettings.navigation,
           separator: "p",
         });
-        // this.updateDocumentHighlightText(this.currentPage?.keyWordList || []);
-      });
+        this.updateState({ feedItem });
+      }
+      // this.updateDocumentFontSize(this.state.readingSettings.document.fontSize);
+      // this.updateViewSettings();
+
+      // this.updateDocumentHighlightText(this.currentPage?.keyWordList || []);
+    });
   }
 
   updateDocumentHighlightText(keywordList: IKeyword[]): void {
@@ -399,34 +410,68 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
     });
   }
 
-  onDocumentTextSelected(selection: string): void {
+  onDocumentTextSelected(selectedText: string): void {
+    this.updateState({ selectedText });
+    // const {
+    //   readingSettings: {
+    //     navigation: { pageI },
+    //   },
+    // } = this.state;
+    // const pages = cloneDeep(this.state.readingSettings.pages);
+
+    // const { keyWordList } = pages[pageI] || new PageSettings();
+
+    // const lastIndex = Math.max(0, keyWordList.length - 1);
+    // keyWordList[lastIndex].text = selection;
+
+    // this.updateSettings({ pages });
+  }
+
+  createKeyword(text: string): void {
+    const { keywordService } = this.props;
     const {
+      feedItem,
       readingSettings: {
         navigation: { pageI },
       },
     } = this.state;
-    const pages = cloneDeep(this.state.readingSettings.pages);
 
-    const { keyWordList } = pages[pageI] || new PageSettings();
+    keywordService.get(text).then((item) => {
+      if (!item) {
+        item = new KeywordSettings();
+        item.text = text;
+        item.color = Math.floor(Math.random() * 16777215).toString(16);
+        keywordService.create(item);
+      }
 
-    const lastIndex = Math.max(0, keyWordList.length - 1);
-    keyWordList[lastIndex].text = selection;
+      if (feedItem) {
+        if (!feedItem.keywordList) {
+          feedItem.keywordList = [];
+        }
 
-    this.updateSettings({ pages });
+        const found = feedItem.keywordList.find((jtem) => jtem.keywordId === item?.id);
+        if (!found) {
+          feedItem.keywordList.push({ keywordId: item.id, pageIndex: pageI });
+        }
+
+        const { feedItemService } = this.props;
+        feedItemService.get(feedItem.guid).then((body) => {
+          if (body) {
+            this.props.feedItemService.update(feedItem.guid, feedItem);
+          } else {
+            this.props.feedItemService.create(feedItem);
+          }
+        });
+
+        return this.updateState({ feedItem });
+      }
+    });
   }
 
   render(): ReactNode {
     const {
-      readingSettings: { document, navigation, pages },
+      readingSettings: { document, navigation },
     } = this.state;
-    const { pageI } = navigation;
-    const currentPage = pages[pageI] || new PageSettings();
-    if (!pages[pageI]) {
-      pages[pageI] = currentPage;
-
-      currentPage.keyWordList.push(new KeywordSettings());
-      currentPage.keyWordList[0].color = Math.floor(Math.random() * 16777215).toString(16);
-    }
 
     return (
       <div className="home">
@@ -462,7 +507,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
             <div className="container">
               <DocumentDOM
                 ref={this.documentInstance}
-                KeywordList={this.currentPage.keyWordList}
+                KeywordList={[]}
                 onTextSelected={(selection) => this.onDocumentTextSelected(selection)}
               />
             </div>
@@ -478,13 +523,36 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
             <div className="controls">
               <div className="floating">
                 <div className="item">
+                  <div className="field has-addons">
+                    <div className="control is-expanded">
+                      <input
+                        value={this.state.selectedText}
+                        onChange={({ target }) => this.updateState({ selectedText: target.value })}
+                        type="text"
+                        className="input"
+                      />
+                    </div>
+                    <div className="control">
+                      <button
+                        onClick={() => this.createKeyword(this.state.selectedText)}
+                        type="button"
+                        className="button is-primary"
+                      >
+                        <span className="icon">
+                          <i className="fas fa-plus"></i>
+                        </span>
+                        <span>Create</span>
+                      </button>
+                    </div>
+                  </div>
+
                   <KeywordListComponent
-                    onStateChanged={(to) => {
-                      const newPages = cloneDeep(pages);
-                      newPages[pageI].keyWordList = to;
-                      this.updateSettings({ pages: newPages });
+                    onChange={() => {
+                      // const newPages = cloneDeep(pages);
+                      // newPages[pageI].keyWordList = to;
+                      // this.updateSettings({ pages: newPages });
                     }}
-                    keywordList={currentPage.keyWordList}
+                    keywordList={[]}
                   />
                 </div>
               </div>

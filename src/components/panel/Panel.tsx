@@ -4,11 +4,11 @@ import { RouteComponentProps } from "react-router-dom";
 import { Subscription } from "../../models/Subscription";
 import {
   BookmarkDateMode,
-  BookmarkLocalStorageService,
   BookmarkSettings,
   BookmarkSortMode,
   BookmarkViewMode,
 } from "../../services/Bookmark";
+import { BookmarkLocalStorageService } from "../../services/BookmarkLocalStorageService";
 
 export class PanelState {
   bookmarkSettings = new BookmarkSettings();

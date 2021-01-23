@@ -4,49 +4,44 @@ import React from "react";
 
 export interface IKeywordListProps {
   keywordList: KeywordSettings[];
-  onStateChanged: (to: KeywordSettings[], from: KeywordSettings[]) => void;
+  onChange: (to: KeywordSettings[], from: KeywordSettings[]) => void;
 }
 
 export class KeywordListComponent extends Component<IKeywordListProps> {
-  componentDidUpdate(): void {
-    const { keywordList, onStateChanged } = this.props;
-    if (keywordList.length === 0) {
-      onStateChanged && onStateChanged([new KeywordSettings()], keywordList);
-    }
+  onChangeKeywordItem(index: number, to: KeywordSettings): void {
+    const { keywordList, onChange } = this.props;
+    const newOne = [...keywordList];
+    newOne[index] = to;
+    onChange && onChange(newOne, keywordList);
   }
 
   render(): ReactNode {
     return (
-      <div className="keywords-component">
-        <table>
+      <div className="keyword-list-component">
+        <table className="table is-fullwidth">
           <tbody>
             {this.props.keywordList.map((item, index) => {
               return (
-                <tr key={index}>
+                <tr key={item.id}>
                   <td>
                     <KeywordItem
-                      onChangeValue={(to) => {
-                        const { keywordList, onStateChanged } = this.props;
-                        const newOne = [...keywordList];
-                        newOne[index] = to;
-                        onStateChanged && onStateChanged(newOne, keywordList);
-                      }}
                       keyword={item}
+                      onChange={(to) => this.onChangeKeywordItem(index, to)}
                     />
-                    {index === this.props.keywordList.length - 1 && (
+                    {/* {index === this.props.keywordList.length - 1 && (
                       <button
                         onClick={() => {
-                          const { keywordList, onStateChanged } = this.props;
+                          const { keywordList, onChange } = this.props;
                           const newOne = [...keywordList];
                           newOne.push({ color: "#ffffff", isGlobal: false, text: "" });
-                          onStateChanged && onStateChanged(newOne, keywordList);
+                          onChange && onChange(newOne, keywordList);
                         }}
                         className="button is-primary"
                         type="button"
                       >
                         <i className="fas fa-plus"></i>
                       </button>
-                    )}
+                    )} */}
                   </td>
                 </tr>
               );
@@ -58,18 +53,18 @@ export class KeywordListComponent extends Component<IKeywordListProps> {
   }
 }
 
-export function KeywordItem({
-  keyword,
-  onChangeValue,
-}: {
+export interface IKeywordItemProps {
   keyword: KeywordSettings;
-  onChangeValue?: (to: KeywordSettings) => void;
-}): ReactElement {
-  const onChange = (to: Partial<KeywordSettings>) =>
-    onChangeValue && onChangeValue({ ...keyword, ...to });
+  onChange: (to: KeywordSettings) => void;
+}
+
+export function KeywordItem(props: IKeywordItemProps): ReactElement {
+  const { keyword } = props;
+  const onChange = (to: Partial<KeywordSettings>) => props.onChange({ ...keyword, ...to });
+
   return (
-    <div className="field has-addons keyword-item">
-      <div className="control">
+    <div className="keyword-item">
+      {/* <div className="control">
         <label className="button" style={{ backgroundColor: keyword.color }}>
           <i className="fas fa-circle" style={{ color: keyword.color }}></i>
           <input
@@ -79,13 +74,14 @@ export function KeywordItem({
             style={{ display: "none" }}
           />
         </label>
-      </div>
+      </div> */}
       <div className="control">
         <input
+          style={{ backgroundColor: "#280000", color: "#ffcc33" }}
           value={keyword.text}
           onChange={(event) => onChange({ text: event.target.value })}
-          type="text"
-          className="input"
+          type="button"
+          className="button"
         />
       </div>
     </div>
