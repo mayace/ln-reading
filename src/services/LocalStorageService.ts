@@ -32,8 +32,10 @@ export abstract class LocalStorageCrudService<T> implements ICrudLikeService<T>{
     get(id: string): Promise<T | undefined> {
         return new Promise(resolve => resolve(this.data.find(item => this.itemComparator(id, item))))
     }
-    getAll(selector?: unknown): Promise<T[]> {
-        return new Promise(resolve => resolve(this.data))
+    getAll(selector?: (item: T) => boolean): Promise<T[]> {
+        return new Promise(resolve => {
+            resolve(selector ? this.data.filter(selector) : this.data)
+        })
     }
 
     create(item: T): Promise<string> {

@@ -1,4 +1,6 @@
-import { DocumentDOM, JpNode, JpNodeType } from "./DocumentDOM";
+import { DocumentDOM } from "./DocumentDOM";
+import { JpNode } from "./JpNode";
+import { JpNodeType } from "./JpNodeType";
 import React from "react";
 import { mount, shallow } from "enzyme";
 

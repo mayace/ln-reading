@@ -42,5 +42,5 @@ export class KeywordSettings {
   id = new Date().getTime()
   text = "";
   color = "";
-  isGlobal = false;
+  isPinned = false;
 }

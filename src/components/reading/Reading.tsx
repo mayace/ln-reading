@@ -1,65 +1,25 @@
 // import Encoding from "encoding-japanese";
 import { cloneDeep } from "lodash";
 import React, { ReactNode } from "react";
-import { CommandProccesor, ICommand } from "../../models/Command";
-import {
-  DocumentSettings,
-  KeywordSettings,
-  NavigationSettings,
-  ViewSettings,
-} from "../../models/Settings";
+import { CommandProccesor } from "../../models/Command";
+import { DocumentSettings, KeywordSettings, NavigationSettings } from "../../models/Settings";
 
 import { IContext, Subscription } from "../../models/Subscription";
-import { BookmarkSettings } from "../../services/Bookmark";
-import { ICrudLikeService, IService } from "../../services/IService";
 import { FontSizeCommand } from "../Commands/FontSize";
-import { KeywordListComponent } from "../Commands/Keyword";
+import { KeywordListComponent } from "../Commands/KeywordListComponent";
 import { NavigationCommand } from "../Commands/Navegation";
 import { FeedItem } from "../explorer/Feed";
-import {
-  ChangeFontSizeCommand,
-  ChangeTextCommand,
-  DocumentDOM,
-  HighLightTextCommand,
-  IKeyword,
-} from "./DocumentDOM";
-// import "./Reading.scss";
-
-export interface IDimension {
-  height: number;
-  width: number;
-}
-export class UpdateTopHeightCommand implements ICommand {
-  constructor(private home: ReadingComponent, private params: IDimension) {}
-  execute(): void {
-    this.home.updateTopHeight(this.params.height);
-  }
-}
-export class UpdateRightWidthCommand implements ICommand {
-  constructor(private home: ReadingComponent, private params: IDimension) {}
-  execute(): void {
-    this.home.updateRightWidth(this.params.width);
-  }
-}
-
-export interface IReadingProps {
-  contentStorageKey: string;
-  keywordService: ICrudLikeService<KeywordSettings>;
-  bookmarkService: IService<BookmarkSettings>;
-  feedItemService: ICrudLikeService<FeedItem>;
-}
-export class ReadingState {
-  readingSettings = new ReadingSettings();
-  feedItem?: FeedItem;
-  keywordList: KeywordSettings[] = [];
-  selectedText = "";
-}
-
-export class ReadingSettings {
-  document = new DocumentSettings();
-  view = new ViewSettings();
-  navigation = new NavigationSettings();
-}
+import { DocumentDOM } from "./DocumentDOM/DocumentDOM";
+import { IKeyword } from "./DocumentDOM/IKeyword";
+import { HighLightTextCommand } from "./DocumentDOM/HighLightTextCommand";
+import { ChangeTextCommand } from "./DocumentDOM/ChangeTextCommand";
+import { ChangeFontSizeCommand } from "./DocumentDOM/ChangeFontSizeCommand";
+import { IReadingProps } from "./IReadingProps";
+import { ReadingState } from "./ReadingState";
+import { ReadingSettings } from "./ReadingSettings";
+import { UpdateRightWidthCommand } from "./UpdateRightWidthCommand";
+import { UpdateTopHeightCommand } from "./UpdateTopHeightCommand";
+import { ModalComponent } from "../modal/Modal";
 
 export class ReadingComponent extends React.Component<IReadingProps, ReadingState> {
   beforeSettingsSubscription = new Subscription<ReadingSettings>();
@@ -163,6 +123,39 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
       },
     });
   }
+  componentDidMount(): void {
+    const { bookmarkService, feedItemService, keywordService } = this.props;
+
+    bookmarkService.read().then(({ selectedGuid }) => {
+      if (selectedGuid) {
+        feedItemService.get(selectedGuid).then((feedItem) => {
+          if (feedItem) {
+            keywordService
+              .getAll(
+                (item: KeywordSettings) =>
+                  feedItem.keywordList.findIndex((jtem) => jtem.keywordId === item.id) >= 0
+              )
+              .then((keywordList) => {
+                Promise.all([
+                  this.updateState({ keywordList }),
+                  this.updateState({ feedItem }),
+                ]).then(() => {
+                  this.updateDocumentTextContent(selectedGuid || "", {
+                    ...this.state.readingSettings.navigation,
+                    separator: "p",
+                  });
+                });
+              });
+          }
+        });
+      }
+      // this.updateDocumentFontSize(this.state.readingSettings.document.fontSize);
+      // this.updateViewSettings();
+
+      // this.updateDocumentHighlightText(this.currentPage?.keyWordList || []);
+    });
+  }
+
   // const [settings, setSettings] = useState(
   //   savedSettingsStr.trim().length > 0 ? (JSON.parse(savedSettingsStr) as Settings) : new Settings()
   // );
@@ -265,27 +258,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
 
   updateState<k extends keyof ReadingState>(change: Pick<ReadingState, k>): Promise<void> {
     return new Promise((resolve) => {
-      this.setState(change, () => resolve());
-    });
-  }
-  componentDidMount(): void {
-    const { bookmarkService } = this.props;
-
-    bookmarkService.read().then((bookmarkSettings) => {
-      const feedItem = bookmarkSettings.FeedItemList.find(
-        (item) => item.guid === bookmarkSettings.selectedGuid
-      );
-      if (feedItem) {
-        this.updateDocumentTextContent(feedItem.guid || "", {
-          ...this.state.readingSettings.navigation,
-          separator: "p",
-        });
-        this.updateState({ feedItem });
-      }
-      // this.updateDocumentFontSize(this.state.readingSettings.document.fontSize);
-      // this.updateViewSettings();
-
-      // this.updateDocumentHighlightText(this.currentPage?.keyWordList || []);
+      this.setState(change, resolve);
     });
   }
 
@@ -440,7 +413,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
       if (!item) {
         item = new KeywordSettings();
         item.text = text;
-        item.color = Math.floor(Math.random() * 16777215).toString(16);
+        item.color = "#" + Math.floor(Math.random() * 16777215).toString(16);
         keywordService.create(item);
       }
 
@@ -468,11 +441,65 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
     });
   }
 
+  onKeywordChange(item: KeywordSettings): void {
+    this.props.keywordService.update(item.text, item);
+  }
+
   render(): ReactNode {
     const {
       readingSettings: { document, navigation },
+      keywordList,
+      selectedText,
     } = this.state;
 
+    return (
+      <div className="reading-component">
+        <div className="columns">
+          <div className="column">
+            <FontSizeCommand
+              document={document || new DocumentSettings()}
+              onTryToChange={(to) => this.updateSettings({ document: to })}
+            />
+          </div>
+          <div className="column">
+            <NavigationCommand
+              onTryToChange={(to) => this.updateSettings({ navigation: to })}
+              navigation={navigation}
+            />
+          </div>
+        </div>
+
+        <div className="columns">
+          <div className="column">
+            <DocumentDOM
+              fontSize={24}
+              color="#FFCC33"
+              background="#280000"
+              unitSize="px"
+              ref={this.documentInstance}
+              KeywordList={keywordList}
+              onTextSelected={(selection) => this.onDocumentTextSelected(selection)}
+            />
+          </div>
+          <div className="column is-3">
+            <KeywordListComponent
+              defaultText={selectedText}
+              onSelect={(selectedKeyword) => this.updateState({ selectedKeyword })}
+              onChange={(item) => this.onKeywordChange(item)}
+              keywordList={keywordList}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  oldLayout(): ReactNode {
+    const {
+      readingSettings: { document, navigation },
+      keywordList,
+      selectedText,
+    } = this.state;
     return (
       <div className="home">
         <div className="head">
@@ -506,6 +533,10 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
           <div className="mid">
             <div className="container">
               <DocumentDOM
+                fontSize={24}
+                color="#FFCC33"
+                background="#280000"
+                unitSize="px"
                 ref={this.documentInstance}
                 KeywordList={[]}
                 onTextSelected={(selection) => this.onDocumentTextSelected(selection)}
@@ -547,12 +578,14 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
                   </div>
 
                   <KeywordListComponent
+                    defaultText={selectedText}
+                    onSelect={() => 1}
                     onChange={() => {
                       // const newPages = cloneDeep(pages);
                       // newPages[pageI].keyWordList = to;
                       // this.updateSettings({ pages: newPages });
                     }}
-                    keywordList={[]}
+                    keywordList={keywordList}
                   />
                 </div>
               </div>
