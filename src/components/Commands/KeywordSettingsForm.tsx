@@ -38,7 +38,7 @@ export class KeywordSettingsForm extends Component<
           <div className="control">
             <label className="checkbox">
               <input
-                // checked={selected.isPinned}
+                checked={selected.isPinned}
                 onChange={({ target }) => this.updateSelected({ isPinned: target.checked })}
                 type="checkbox" />
               <span>&nbsp;Pinned</span>

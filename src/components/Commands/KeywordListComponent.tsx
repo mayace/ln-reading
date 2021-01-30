@@ -5,6 +5,7 @@ import { IKeywordListProps } from "./IKeywordListProps";
 import { ModalComponent } from "../modal/Modal";
 import { KeyWordListState } from "./KeyWordListState";
 import { KeywordSettingsForm } from "./KeywordSettingsForm";
+import { KeywordSettings } from "../../models/Settings";
 
 export class KeywordListComponent extends Component<IKeywordListProps, KeyWordListState> {
   constructor(props: IKeywordListProps) {
@@ -33,6 +34,13 @@ export class KeywordListComponent extends Component<IKeywordListProps, KeyWordLi
     return new Promise((resolve) => this.setState(change, resolve));
   }
 
+  onCreate(text: string): void {
+    const selectedKeyword = new KeywordSettings();
+    selectedKeyword.text = text;
+    selectedKeyword.id = "";
+    this.updateState({ selectedKeyword });
+  }
+
   render(): ReactNode {
     const { selectedKeyword, selectedText } = this.state;
     return (
@@ -45,8 +53,8 @@ export class KeywordListComponent extends Component<IKeywordListProps, KeyWordLi
                   item={selectedKeyword}
                   onCancel={() => this.updateState({ selectedKeyword: null })}
                   onSave={(item) => {
-                    this.props.onChange(item);
                     this.updateState({ selectedKeyword: null });
+                    item.id.length === 0 ? this.props.onCreate(item) : this.props.onChange(item);
                   }}
                 />
               </div>
@@ -65,7 +73,11 @@ export class KeywordListComponent extends Component<IKeywordListProps, KeyWordLi
                 />
               </td>
               <td>
-                <button onClick={() => 1} type="button" className="button is-primary">
+                <button
+                  onClick={() => this.onCreate(selectedText)}
+                  type="button"
+                  className="button is-primary"
+                >
                   <span className="icon">
                     <i className="fas fa-file"></i>
                   </span>

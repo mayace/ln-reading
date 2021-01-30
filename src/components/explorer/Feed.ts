@@ -2,7 +2,7 @@
 import RssParser from "rss-parser";
 
 export interface IReadingKeywordItem {
-    keywordId: number
+    keywordId: string
     pageIndex: number
 }
 

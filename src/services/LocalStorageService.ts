@@ -99,7 +99,7 @@ export abstract class LocalStorageService<T> implements IService<T> {
 
 export class KeywordLocalStorageCrudService extends LocalStorageCrudService<KeywordSettings>{
     itemComparator(id: string, item: KeywordSettings): boolean {
-        return id === item.text;
+        return id === item.id;
     }
 }
 

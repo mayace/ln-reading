@@ -20,6 +20,7 @@ import { ReadingSettings } from "./ReadingSettings";
 import { UpdateRightWidthCommand } from "./UpdateRightWidthCommand";
 import { UpdateTopHeightCommand } from "./UpdateTopHeightCommand";
 import { ModalComponent } from "../modal/Modal";
+import { v4 as uuidv4 } from "uuid";
 
 export class ReadingComponent extends React.Component<IReadingProps, ReadingState> {
   beforeSettingsSubscription = new Subscription<ReadingSettings>();
@@ -444,6 +445,44 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
   onKeywordChange(item: KeywordSettings): void {
     this.props.keywordService.update(item.text, item);
   }
+  onKeywordCreate(item: KeywordSettings): void {
+    const {
+      feedItem,
+      readingSettings: { navigation },
+    } = this.state;
+    const { keywordService, feedItemService } = this.props;
+
+    keywordService
+      .getAll((jtem: KeywordSettings) => jtem.text === item.text)
+      .then((jtem) => {
+        return jtem.length > 0 ? jtem[0] : undefined;
+      })
+      .then((jtem) => {
+        if (!jtem) {
+          item.id = uuidv4();
+          return keywordService.create(item).then(() => item);
+        }
+        return jtem;
+      })
+      .then((jtem) => {
+        if (feedItem) {
+          let kFound = feedItem.keywordList.find((ktem) => ktem.keywordId === jtem.id);
+          if (!kFound) {
+            kFound = { keywordId: jtem.id, pageIndex: navigation.pageI };
+            feedItem.keywordList.push(kFound);
+            return feedItemService.update(feedItem.guid, feedItem).then(() => {
+              return this.updateState({ feedItem }).then(() => "");
+            });
+          }
+          return "It's already on your current list.";
+        }
+      })
+      .then((error) => {
+        if (error) {
+          alert(error);
+        }
+      });
+  }
 
   render(): ReactNode {
     const {
@@ -486,6 +525,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
               defaultText={selectedText}
               onSelect={(selectedKeyword) => this.updateState({ selectedKeyword })}
               onChange={(item) => this.onKeywordChange(item)}
+              onCreate={(item) => this.onKeywordCreate(item)}
               keywordList={keywordList}
             />
           </div>
@@ -494,105 +534,105 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
     );
   }
 
-  oldLayout(): ReactNode {
-    const {
-      readingSettings: { document, navigation },
-      keywordList,
-      selectedText,
-    } = this.state;
-    return (
-      <div className="home">
-        <div className="head">
-          <div className="controls-2" />
-          <div className="controls">
-            <div className="container">
-              <div className="item">
-                <FontSizeCommand
-                  document={document || new DocumentSettings()}
-                  onTryToChange={(to) => this.updateSettings({ document: to })}
-                />
-              </div>
-              <div className="item">
-                <NavigationCommand
-                  onTryToChange={(to) => this.updateSettings({ navigation: to })}
-                  navigation={navigation}
-                />
-              </div>
-              <div className="item">
-                <input
-                  type="file"
-                  onChange={({ target }) => (target.files?.length ? this.readFile() : 1)}
-                />
-              </div>
-            </div>
-            <div className="bar" onMouseDown={this.onResizeHead} />
-          </div>
-        </div>
-        <div className="body">
-          <div className="left" />
-          <div className="mid">
-            <div className="container">
-              <DocumentDOM
-                fontSize={24}
-                color="#FFCC33"
-                background="#280000"
-                unitSize="px"
-                ref={this.documentInstance}
-                KeywordList={[]}
-                onTextSelected={(selection) => this.onDocumentTextSelected(selection)}
-              />
-            </div>
-          </div>
-          <div className="right">
-            <div
-              onDragStart={() => false}
-              onMouseDown={(event) => this.onResizeRight(event)}
-              className="bar"
-            >
-              &nbsp;
-            </div>
-            <div className="controls">
-              <div className="floating">
-                <div className="item">
-                  <div className="field has-addons">
-                    <div className="control is-expanded">
-                      <input
-                        value={this.state.selectedText}
-                        onChange={({ target }) => this.updateState({ selectedText: target.value })}
-                        type="text"
-                        className="input"
-                      />
-                    </div>
-                    <div className="control">
-                      <button
-                        onClick={() => this.createKeyword(this.state.selectedText)}
-                        type="button"
-                        className="button is-primary"
-                      >
-                        <span className="icon">
-                          <i className="fas fa-plus"></i>
-                        </span>
-                        <span>Create</span>
-                      </button>
-                    </div>
-                  </div>
+  // oldLayout(): ReactNode {
+  //   const {
+  //     readingSettings: { document, navigation },
+  //     keywordList,
+  //     selectedText,
+  //   } = this.state;
+  //   return (
+  //     <div className="home">
+  //       <div className="head">
+  //         <div className="controls-2" />
+  //         <div className="controls">
+  //           <div className="container">
+  //             <div className="item">
+  //               <FontSizeCommand
+  //                 document={document || new DocumentSettings()}
+  //                 onTryToChange={(to) => this.updateSettings({ document: to })}
+  //               />
+  //             </div>
+  //             <div className="item">
+  //               <NavigationCommand
+  //                 onTryToChange={(to) => this.updateSettings({ navigation: to })}
+  //                 navigation={navigation}
+  //               />
+  //             </div>
+  //             <div className="item">
+  //               <input
+  //                 type="file"
+  //                 onChange={({ target }) => (target.files?.length ? this.readFile() : 1)}
+  //               />
+  //             </div>
+  //           </div>
+  //           <div className="bar" onMouseDown={this.onResizeHead} />
+  //         </div>
+  //       </div>
+  //       <div className="body">
+  //         <div className="left" />
+  //         <div className="mid">
+  //           <div className="container">
+  //             <DocumentDOM
+  //               fontSize={24}
+  //               color="#FFCC33"
+  //               background="#280000"
+  //               unitSize="px"
+  //               ref={this.documentInstance}
+  //               KeywordList={[]}
+  //               onTextSelected={(selection) => this.onDocumentTextSelected(selection)}
+  //             />
+  //           </div>
+  //         </div>
+  //         <div className="right">
+  //           <div
+  //             onDragStart={() => false}
+  //             onMouseDown={(event) => this.onResizeRight(event)}
+  //             className="bar"
+  //           >
+  //             &nbsp;
+  //           </div>
+  //           <div className="controls">
+  //             <div className="floating">
+  //               <div className="item">
+  //                 <div className="field has-addons">
+  //                   <div className="control is-expanded">
+  //                     <input
+  //                       value={this.state.selectedText}
+  //                       onChange={({ target }) => this.updateState({ selectedText: target.value })}
+  //                       type="text"
+  //                       className="input"
+  //                     />
+  //                   </div>
+  //                   <div className="control">
+  //                     <button
+  //                       onClick={() => this.createKeyword(this.state.selectedText)}
+  //                       type="button"
+  //                       className="button is-primary"
+  //                     >
+  //                       <span className="icon">
+  //                         <i className="fas fa-plus"></i>
+  //                       </span>
+  //                       <span>Create</span>
+  //                     </button>
+  //                   </div>
+  //                 </div>
 
-                  <KeywordListComponent
-                    defaultText={selectedText}
-                    onSelect={() => 1}
-                    onChange={() => {
-                      // const newPages = cloneDeep(pages);
-                      // newPages[pageI].keyWordList = to;
-                      // this.updateSettings({ pages: newPages });
-                    }}
-                    keywordList={keywordList}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  //                 <KeywordListComponent
+  //                   defaultText={selectedText}
+  //                   onSelect={() => 1}
+  //                   onChange={() => {
+  //                     // const newPages = cloneDeep(pages);
+  //                     // newPages[pageI].keyWordList = to;
+  //                     // this.updateSettings({ pages: newPages });
+  //                   }}
+  //                   keywordList={keywordList}
+  //                 />
+  //               </div>
+  //             </div>
+  //           </div>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 }

@@ -39,8 +39,8 @@ export class PageSettings {
 }
 
 export class KeywordSettings {
-  id = new Date().getTime()
+  id: string = new Date().getTime().toString()
   text = "";
-  color = "";
+  color = "#" + Math.floor(Math.random() * 16777215).toString(16);
   isPinned = false;
 }
