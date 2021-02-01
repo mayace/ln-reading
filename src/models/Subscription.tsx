@@ -7,6 +7,10 @@ export interface IContext<T> {
 export interface ISubscription {
   unsubscribe(): void;
 }
+export interface ISubject<T>{
+  notifyAll(context:T):void;
+  subscribe(subscriber: ISubscriber<T>):ISubscription
+}
 
 export class Subscription<T> {
   private subscribers: ISubscriber<T>[] = [];

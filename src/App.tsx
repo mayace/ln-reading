@@ -9,10 +9,8 @@ import { BookmarkSettings } from "./services/Bookmark";
 import { BookmarkLocalStorageService } from "./services/BookmarkLocalStorageService";
 import { KeywordSettings } from "./models/Settings";
 import { KeywordLocalStorageService } from "./services/KeywordService";
-import {
-  FeedItemLocalStorageCrudService,
-  KeywordLocalStorageCrudService,
-} from "./services/LocalStorageService";
+import { FeedItemLocalStorageCrudService } from "./services/FeedItemLocalStorageCrudService";
+import { KeywordLocalStorageCrudService } from "./services/KeywordLocalStorageCrudService";
 import { FeedItem } from "./components/explorer/Feed";
 
 export default function App(): ReactElement {
@@ -82,7 +80,7 @@ export default function App(): ReactElement {
                 }}
               ></Route>
               <Route path="/feed">
-                <ExplorerComponent />
+                <ExplorerComponent feedItemService={feedItemService} />
               </Route>
               <Route path="/reading">
                 <ReadingComponent

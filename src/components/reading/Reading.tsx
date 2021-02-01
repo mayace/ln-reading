@@ -8,7 +8,7 @@ import { IContext, Subscription } from "../../models/Subscription";
 import { FontSizeCommand } from "../Commands/FontSize";
 import { KeywordListComponent } from "../Commands/KeywordListComponent";
 import { NavigationCommand } from "../Commands/Navegation";
-import { FeedItem } from "../explorer/Feed";
+import { FeedItem, IReadingKeywordItem } from "../explorer/Feed";
 import { DocumentDOM } from "./DocumentDOM/DocumentDOM";
 import { IKeyword } from "./DocumentDOM/IKeyword";
 import { HighLightTextCommand } from "./DocumentDOM/HighLightTextCommand";
@@ -19,8 +19,8 @@ import { ReadingState } from "./ReadingState";
 import { ReadingSettings } from "./ReadingSettings";
 import { UpdateRightWidthCommand } from "./UpdateRightWidthCommand";
 import { UpdateTopHeightCommand } from "./UpdateTopHeightCommand";
-import { ModalComponent } from "../modal/Modal";
 import { v4 as uuidv4 } from "uuid";
+import { Subject } from "rxjs";
 
 export class ReadingComponent extends React.Component<IReadingProps, ReadingState> {
   beforeSettingsSubscription = new Subscription<ReadingSettings>();
@@ -30,6 +30,8 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
   commandProccesor = new CommandProccesor();
 
   feedItemSubscription = new Subscription<IContext<FeedItem>>();
+
+  keywordListSubject = new Subject<KeywordSettings[]>();
 
   // get currentPage(): PageSettings {
   //   const {
@@ -43,6 +45,11 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
 
   constructor(props: IReadingProps) {
     super(props);
+    this.keywordListSubject.subscribe({
+      next: (context) => {
+        console.log(context);
+      },
+    });
 
     this.state = new ReadingState();
     this.onResizeHead = this.onResizeHead.bind(this);
@@ -130,11 +137,12 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
     bookmarkService.read().then(({ selectedGuid }) => {
       if (selectedGuid) {
         feedItemService.get(selectedGuid).then((feedItem) => {
+          console.log([selectedGuid, feedItem]);
           if (feedItem) {
             keywordService
               .getAll(
                 (item: KeywordSettings) =>
-                  feedItem.keywordList.findIndex((jtem) => jtem.keywordId === item.id) >= 0
+                  feedItem.keywordList.findIndex((jtem) => jtem.keywordId === item.id) >= 0,
               )
               .then((keywordList) => {
                 Promise.all([
@@ -155,6 +163,12 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
 
       // this.updateDocumentHighlightText(this.currentPage?.keyWordList || []);
     });
+  }
+
+  getKeywordList(keywordList: IReadingKeywordItem[]): Promise<KeywordSettings[]> {
+    return this.props.keywordService.getAll((item: KeywordSettings) =>
+      keywordList.find((jtem) => jtem.keywordId === item.id),
+    );
   }
 
   // const [settings, setSettings] = useState(
@@ -282,10 +296,10 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
   updateViewSettings(): void {
     const { view } = this.state.readingSettings;
     this.commandProccesor.place(
-      new UpdateTopHeightCommand(this, { height: view.top.height, width: 0 })
+      new UpdateTopHeightCommand(this, { height: view.top.height, width: 0 }),
     );
     this.commandProccesor.place(
-      new UpdateRightWidthCommand(this, { height: 0, width: view.right.width })
+      new UpdateRightWidthCommand(this, { height: 0, width: view.right.width }),
     );
 
     this.commandProccesor.proccess();
@@ -410,40 +424,49 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
       },
     } = this.state;
 
-    keywordService.get(text).then((item) => {
-      if (!item) {
-        item = new KeywordSettings();
-        item.text = text;
-        item.color = "#" + Math.floor(Math.random() * 16777215).toString(16);
-        keywordService.create(item);
-      }
-
-      if (feedItem) {
-        if (!feedItem.keywordList) {
-          feedItem.keywordList = [];
+    keywordService
+      .get(text)
+      .then((item) => {
+        if (!item) {
+          item = new KeywordSettings();
+          item.text = text;
+          item.color = "#" + Math.floor(Math.random() * 16777215).toString(16);
+          return keywordService.create(item).then(() => item);
         }
 
-        const found = feedItem.keywordList.find((jtem) => jtem.keywordId === item?.id);
-        if (!found) {
-          feedItem.keywordList.push({ keywordId: item.id, pageIndex: pageI });
-        }
-
-        const { feedItemService } = this.props;
-        feedItemService.get(feedItem.guid).then((body) => {
-          if (body) {
-            this.props.feedItemService.update(feedItem.guid, feedItem);
-          } else {
-            this.props.feedItemService.create(feedItem);
+        return item;
+      })
+      .then((item) => {
+        if (feedItem && item) {
+          if (!feedItem.keywordList) {
+            feedItem.keywordList = [];
           }
-        });
 
-        return this.updateState({ feedItem });
-      }
-    });
+          const found = feedItem.keywordList.find((jtem) => jtem.keywordId === item.id);
+          if (!found) {
+            feedItem.keywordList.push({ keywordId: item.id, pageIndex: pageI });
+            const { feedItemService } = this.props;
+            return feedItemService.get(feedItem.guid).then((body) => {
+              if (body) {
+                this.props.feedItemService.update(feedItem.guid, feedItem);
+              } else {
+                this.props.feedItemService.create(feedItem);
+              }
+            });
+          }
+        }
+      });
   }
 
   onKeywordChange(item: KeywordSettings): void {
-    this.props.keywordService.update(item.text, item);
+    const { keywordList } = this.state;
+    this.props.keywordService.update(item.id, item).then(() => {
+      const jndex = keywordList.findIndex((jtem) => jtem.id === item.id);
+      if (jndex >= 0) {
+        keywordList[jndex] = item;
+        return this.updateState({ keywordList });
+      }
+    });
   }
   onKeywordCreate(item: KeywordSettings): void {
     const {
@@ -471,17 +494,35 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
             kFound = { keywordId: jtem.id, pageIndex: navigation.pageI };
             feedItem.keywordList.push(kFound);
             return feedItemService.update(feedItem.guid, feedItem).then(() => {
-              return this.updateState({ feedItem }).then(() => "");
+              return this.updateState({ feedItem }).then(() => jtem);
             });
           }
-          return "It's already on your current list.";
+          throw "It's already on your current list.";
         }
       })
-      .then((error) => {
-        if (error) {
-          alert(error);
+      .then((jtem) => {
+        const { keywordList } = this.state;
+        if (jtem) {
+          keywordList.push(jtem);
+          return this.updateState({ keywordList });
         }
-      });
+      })
+      .catch((reason) => alert(reason));
+  }
+
+  onKeywordDelete(index: number): void {
+    const { keywordList, feedItem } = this.state;
+
+    const item = keywordList[index];
+    const jndex = feedItem.keywordList.findIndex((jtem) => (jtem.keywordId = item.id));
+
+    keywordList.splice(index, 1);
+    feedItem.keywordList.splice(jndex, 1);
+
+    this.props.feedItemService.update(feedItem.guid, feedItem).then(() => {
+      this.updateState({ feedItem });
+      this.updateState({ keywordList });
+    });
   }
 
   render(): ReactNode {
@@ -526,6 +567,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
               onSelect={(selectedKeyword) => this.updateState({ selectedKeyword })}
               onChange={(item) => this.onKeywordChange(item)}
               onCreate={(item) => this.onKeywordCreate(item)}
+              onDelete={(index) => this.onKeywordDelete(index)}
               keywordList={keywordList}
             />
           </div>

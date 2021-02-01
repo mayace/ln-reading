@@ -41,6 +41,12 @@ export class KeywordListComponent extends Component<IKeywordListProps, KeyWordLi
     this.updateState({ selectedKeyword });
   }
 
+  onDelete(index: number): void {
+    if (confirm("Are you sure to delete this element?")) {
+      this.props.onDelete(index);
+    }
+  }
+
   render(): ReactNode {
     const { selectedKeyword, selectedText } = this.state;
     return (
@@ -85,7 +91,7 @@ export class KeywordListComponent extends Component<IKeywordListProps, KeyWordLi
               </td>
             </tr>
 
-            {this.props.keywordList.map((item) => {
+            {this.props.keywordList.map((item, index) => {
               return (
                 <tr key={item.id}>
                   <td>
@@ -96,7 +102,11 @@ export class KeywordListComponent extends Component<IKeywordListProps, KeyWordLi
                     />
                   </td>
                   <td>
-                    <button type="button" className="button is-danger">
+                    <button
+                      onClick={() => this.onDelete(index)}
+                      type="button"
+                      className="button is-danger"
+                    >
                       <span className="icon">
                         <i className="fas fa-trash"></i>
                       </span>

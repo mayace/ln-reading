@@ -40,16 +40,19 @@ export class SaveToLocalStorage extends ReactiveDecorator1 {
 
 }
 
+export interface IDictionary{
+    [key:string]: unknown
+}
+
 export class ReactiveDecorator {
 
 
-    constructor(o: { [index: string]: unknown }) {
-        Object.keys(o).forEach(key => {
-            let _val = o[key];
-            delete o[key];
-            Object.defineProperty(o, key, {
-                get: () => _val
-                , set: val => _val = val
+    constructor(o: IDictionary) {
+        Object.keys(this).forEach(key => {
+            // delete this[key];
+            Object.defineProperty(this, key, {
+                get: () => o[key]
+                , set: val => o[key] = val
             })
         });
     }

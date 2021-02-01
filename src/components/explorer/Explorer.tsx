@@ -3,17 +3,9 @@ import { BookmarkSettings } from "../../services/Bookmark";
 import { BookmarkLocalStorageService } from "../../services/BookmarkLocalStorageService";
 import { IService } from "../../services/IService";
 import { ModalComponent } from "../modal/Modal";
+import { ExplorerComponentState } from "./ExplorerComponentState";
 import { Feed, FeedItem, IFeedItemInfo } from "./Feed";
-
-export class ExplorerComponentState {
-  feedList: IFeedItemInfo[] = [];
-  feedUrlList: string[] = [];
-  selectedFeedItem: IFeedItemInfo | null = null;
-  bookmarkSettings = new BookmarkSettings();
-}
-export interface IExplorerComponentProps {
-  test?: string;
-}
+import { IExplorerComponentProps } from "./IExplorerComponentProps";
 
 export class ExplorerComponent extends React.Component<
   IExplorerComponentProps,
@@ -22,7 +14,7 @@ export class ExplorerComponent extends React.Component<
   state = new ExplorerComponentState();
   feed = new Feed("");
   bookmarkService: IService<BookmarkSettings> = new BookmarkLocalStorageService(
-    "bookmarkServiceKey"
+    "bookmarkServiceKey",
   );
 
   constructor(props: IExplorerComponentProps) {
@@ -35,14 +27,14 @@ export class ExplorerComponent extends React.Component<
   }
 
   updateState<K extends keyof ExplorerComponentState>(
-    change: Pick<ExplorerComponentState, K>
+    change: Pick<ExplorerComponentState, K>,
   ): void {
     this.setState(change);
   }
 
   componentDidMount(): void {
     this.state.feedUrlList.forEach((item) =>
-      this.feed.parse(item).then((body) => this.setState({ feedList: body.items }))
+      this.feed.parse(item).then((body) => this.setState({ feedList: body.items })),
     );
 
     this.bookmarkService.read().then((bookmarkSettings) => this.updateState({ bookmarkSettings }));
@@ -62,7 +54,9 @@ export class ExplorerComponent extends React.Component<
 
     entry.content = entry.guid;
     entry.contentSnippet = entry.contentSnippet.substr(0, 95);
+    // todo: choose one (second)
     bookmarkSettings.FeedItemList.push(entry);
+    this.props.feedItemService.create(entry);
 
     this.updateState({ bookmarkSettings });
     this.bookmarkService.save(bookmarkSettings);
@@ -75,7 +69,10 @@ export class ExplorerComponent extends React.Component<
   }
   unbookmark(index: number): void {
     const { bookmarkSettings } = this.state;
+
+    //todo: choose one (the second)
     const deleted = bookmarkSettings.FeedItemList.splice(index, 1);
+    this.props.feedItemService.delete(deleted[0].guid);
 
     this.updateState({ bookmarkSettings });
     this.bookmarkService.save(bookmarkSettings);
@@ -86,7 +83,7 @@ export class ExplorerComponent extends React.Component<
   render(): ReactNode {
     const { selectedFeedItem, bookmarkSettings } = this.state;
     const savedIndex = bookmarkSettings.FeedItemList.findIndex(
-      (item) => item.guid === selectedFeedItem?.guid
+      (item) => item.guid === selectedFeedItem?.guid,
     );
     const savedFeedItem = bookmarkSettings.FeedItemList[savedIndex];
 

@@ -41,14 +41,14 @@ export interface IFeed<T, U> {
 }
 
 export class Feed implements IFeed<IFeedInfo, IFeedItemInfo>{
-    private proxy = "https://cors-anywhere.herokuapp.com";
+    private proxy = "http://localhost:8080";
     private parser = new RssParser<IFeedInfo, IFeedItemInfo>();
 
     constructor(private url: string) { }
     async parse(url?: string): Promise<IFeedInfo & RssParser.Output<IFeedItemInfo>> {
         if (url)
             this.url = url;
-        return await this.parser.parseURL(`${this.url}`);
+        return await this.parser.parseURL(`${this.proxy}/${this.url}`);
     }
 }
 // export class Feed implements BaseFeed {
