@@ -149,6 +149,11 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
                   this.updateState({ keywordList }),
                   this.updateState({ feedItem }),
                 ]).then(() => {
+                  const nodeList = this.getNodeList(
+                    selectedGuid,
+                    this.state.readingSettings.navigation,
+                  );
+                  this.updateState({ nodeList });
                   this.updateDocumentTextContent(selectedGuid || "", {
                     ...this.state.readingSettings.navigation,
                     separator: "p",
@@ -327,6 +332,26 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
       this.commandProccesor.place(new ChangeTextCommand(instance, { elementList }));
       this.commandProccesor.proccess();
     }
+  }
+
+  getNodeList(id: string, navigation: NavigationSettings): Node[] {
+    const rawText = window.localStorage.getItem(id)?.trim() || "";
+
+    const html = document.createElement("html");
+    html.innerHTML = rawText;
+    const query = html.querySelectorAll(navigation.separator);
+    const posI = this.getTextContentPosI(navigation.pageI, navigation.length);
+    const elementList = [];
+    for (let index = posI; index < query.length; index++) {
+      const item = query[index];
+      if (index < posI + navigation.length) {
+        elementList.push(item);
+      } else {
+        break;
+      }
+    }
+
+    return elementList;
   }
 
   // const render = (fileContents: string, start: number, length?: number) => {
@@ -529,6 +554,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
     const {
       readingSettings: { document, navigation },
       keywordList,
+      nodeList,
       selectedText,
     } = this.state;
 
@@ -558,6 +584,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
               unitSize="px"
               ref={this.documentInstance}
               KeywordList={keywordList}
+              nodeList={nodeList}
               onTextSelected={(selection) => this.onDocumentTextSelected(selection)}
             />
           </div>

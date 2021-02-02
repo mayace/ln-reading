@@ -1,5 +1,5 @@
 import { ICommand } from "../../models/Command";
-import { ReadingComponent } from "./Reading";
+import { ReadingComponent } from "./ReadingComponent";
 import { IDimension } from "./IDimension";
 
 export class UpdateTopHeightCommand implements ICommand {

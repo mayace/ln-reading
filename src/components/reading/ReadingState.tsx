@@ -12,9 +12,11 @@ export interface IReadingState {
   keywordList: KeywordSettings[];
   selectedText: string;
   selectedKeyword: KeywordSettings | null;
+  nodeList: Node[];
 }
 
 export class ReadingState implements IReadingState {
+  nodeList: Node[] = [];
   selectedKeyword: KeywordSettings | null = null;
   [key: string]: unknown;
   readingSettings = new ReadingSettings();
@@ -52,6 +54,7 @@ export class Ddd implements IReadingState {
       });
     });
   }
+  nodeList: Node[] = [];
   private setupProperties(prevKey: string, obj: { [key: string]: unknown }): void {
     Object.keys(obj).forEach((key) => {
       delete obj[key];

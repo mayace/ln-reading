@@ -1,33 +1,35 @@
-
-export class NavigationSettings {
+export interface INavigationSettings {
+  length: number;
+  pageI: number;
+  separator: string;
+}
+export class NavigationSettings implements INavigationSettings {
   length = 10;
   pageI = 0;
-  separator = "";
+  separator = "p";
 }
 export class ViewSettings {
-  left = { width: 0 }
-  top = { height: 0 }
-  right = { width: 0 }
+  left = { width: 0 };
+  top = { height: 0 };
+  right = { width: 0 };
 }
 export class DocumentSettings {
-  fontSize = 14
+  fontSize = 14;
 }
 
 export class Settings {
-  document = new DocumentSettings()
+  document = new DocumentSettings();
 
   content = {
     localStorageKey: "",
   };
 
-  view = new ViewSettings()
+  view = new ViewSettings();
 
-  navigation = new NavigationSettings()
+  navigation = new NavigationSettings();
   pages: { [key: number]: PageSettings } = {};
   commandList: CommandSettings[] = [{ code: "keywords", layout: "right" }];
-
 }
-
 
 export class CommandSettings {
   layout = "";
@@ -39,7 +41,7 @@ export class PageSettings {
 }
 
 export class KeywordSettings {
-  id: string = new Date().getTime().toString()
+  id: string = new Date().getTime().toString();
   text = "";
   color = "#" + Math.floor(Math.random() * 16777215).toString(16);
   isPinned = false;

@@ -6,5 +6,6 @@ export interface IDocumentDOMProps {
   unitSize: string;
   color: string;
   background: string;
+  nodeList: Node[]
   onTextSelected: (text: string) => void;
 }

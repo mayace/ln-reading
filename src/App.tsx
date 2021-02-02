@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react";
-import { ReadingComponent } from "./components/reading/Reading";
+import { ReadingComponent } from "./components/reading/ReadingComponent";
 import "./App.scss";
 import { Route, BrowserRouter, Switch, NavLink } from "react-router-dom";
 import { PanelComponent } from "./components/panel/Panel";

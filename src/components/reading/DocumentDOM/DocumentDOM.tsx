@@ -54,7 +54,7 @@ export class DocumentDOM extends React.Component<IDocumentDOMProps, DocumentDOMS
             const start = match.index;
             const end = match.index + itemText.length;
             // console.log([start, end, itemText]);
-            node.createChild(start, end, JpNodeType.span);
+            node.createChild(start, end, JpNodeType.span, { style: `background:${item.color};` });
           }
         }
       });
@@ -119,7 +119,7 @@ export class DocumentDOM extends React.Component<IDocumentDOMProps, DocumentDOMS
 
   getNonConflictTextRangePositionArray(
     list: ITextRangePosition[],
-    startAt = 1
+    startAt = 1,
   ): ITextRangePosition[] {
     if (list.length > 1) {
       const jtem = list[Math.max(1, startAt)];
@@ -166,6 +166,33 @@ export class DocumentDOM extends React.Component<IDocumentDOMProps, DocumentDOMS
       const { onTextSelected } = this.props;
       onTextSelected(selection);
     }
+  }
+
+  renderItem(node: Node): JSX.Element {
+    if (node instanceof Text) {
+      return <span>{node.textContent}</span>;
+    }
+    if (node.nodeName === "RT") {
+      return <rt>{node.textContent}</rt>;
+    }
+
+    const children: JSX.Element[] = [];
+    node.childNodes.forEach((jtem) => children.push(this.renderItem(jtem)));
+
+    if (node.nodeName === "RUBY") {
+      return <ruby>{children}</ruby>;
+    }
+    return <span>{children}</span>;
+  }
+
+  renderList(list: Node[]): JSX.Element {
+    return (
+      <div className="list">
+        {list.map((item, index) => {
+          return <p key={index}>{this.renderItem(item)}</p>;
+        })}
+      </div>
+    );
   }
 
   render(): ReactNode {

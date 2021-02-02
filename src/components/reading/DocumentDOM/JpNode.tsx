@@ -1,11 +1,12 @@
+import { Dictionary } from "lodash";
 import { JpNodeType } from "./JpNodeType";
-
 
 export class JpNode {
   type = JpNodeType.text;
   private _start = 0;
   private _text;
   private children: JpNode[] = [];
+  attributeList: Dictionary<string> = {};
 
   constructor(type: JpNodeType, text: string, start: number) {
     this.type = type;
@@ -49,6 +50,9 @@ export class JpNode {
       case JpNodeType.span:
         el = document.createElement("span");
         break;
+      case JpNodeType.p:
+        el = document.createElement("p");
+        break;
       default:
         el = document.createTextNode(this.text);
     }
@@ -58,6 +62,14 @@ export class JpNode {
       el.appendChild(document.createTextNode(this.text));
     }
 
+    if (el instanceof HTMLElement) {
+      for (const key in this.attributeList) {
+        if (Object.prototype.hasOwnProperty.call(this.attributeList, key)) {
+          const item = this.attributeList[key];
+          (el as HTMLElement).setAttribute(key, item);
+        }
+      }
+    }
     return el;
   }
 
@@ -79,7 +91,7 @@ export class JpNode {
     }
     return [];
   }
-  createChild(start: number, end: number, type: JpNodeType): void {
+  createChild(start: number, end: number, type: JpNodeType, attributes?: Dictionary<string>): void {
     if (this.hasChildren) {
       const filtered = this.getChildren(start, end).filter((item) => {
         const isNotRt = item.type !== JpNodeType.rt;
@@ -87,12 +99,12 @@ export class JpNode {
       });
 
       filtered.forEach((item) => {
-        item.createChild(start, end, type);
+        item.createChild(start, end, type,attributes);
       });
 
       if (filtered.length === 0) {
         console.log(
-          `no children found in range ${start},${end}, from item with start ${this.start}, and length ${this.length}`
+          `no children found in range ${start},${end}, from item with start ${this.start}, and length ${this.length}`,
         );
         console.log(this.children);
       }
@@ -101,15 +113,21 @@ export class JpNode {
 
     if (start > this.start) {
       const leftText = this._text.substring(0, start - this.start);
-      this.children.push(new JpNode(JpNodeType.text, leftText, 0));
+      const newNode = new JpNode(JpNodeType.text, leftText, 0);
+      newNode.attributeList = { ...this.attributeList, ...attributes };
+      this.children.push(newNode);
     }
     const midText = this._text.substring(start - this.start, end - this.start);
-    this.children.push(new JpNode(type, midText, start));
+    const newNode = new JpNode(type, midText, start);
+    newNode.attributeList = { ...this.attributeList, ...attributes };
+    this.children.push(newNode);
     // console.log([start, end, this._text, midText]);
     if (end < this.start + this._text.length) {
       const rightText = this._text.substring(end - this.start);
+      const newNode = new JpNode(JpNodeType.text, rightText, end);
+      newNode.attributeList = { ...this.attributeList, ...attributes };
       // console.log([start,end,this._text,rightText]);
-      this.children.push(new JpNode(JpNodeType.text, rightText, end));
+      this.children.push(newNode);
     }
     this._text = "";
     this.type = JpNodeType.span;
@@ -145,6 +163,10 @@ export class JpNode {
         break;
       case "rt":
         type = JpNodeType.rt;
+        break;
+      case "p":
+      case "div":
+        type = JpNodeType.p;
         break;
     }
 
