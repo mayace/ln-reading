@@ -1,78 +1,76 @@
+// old layout
+// .home {
+//   background-color: #280000;
+//   color: #ffcc33;
 
-.home {
-  background-color: #280000;
-  color: #ffcc33;
+//   .head {
+//     .controls {
+//       position: fixed;
+//       width: 100%;
+//       background-color: midnightblue;
+//       z-index: 2;
+//       top: 0;
+//       .container {
+//         display: flex;
+//         align-items: center;
+//         overflow: hidden;
+//         justify-content: space-between;
+//       }
+//       .bar {
+//         background-color: #f1d4b3;
+//         cursor: n-resize;
+//         height: 8px;
+//       }
+//     }
+//     .container,
+//     .controls-2 {
+//       height: 60px;
+//     }
+//   }
+//   .body {
+//     display: flex;
+//     .mid {
+//       padding: 10px 25px;
+//     }
+//     .right {
+//       position: relative;
+//       display: flex;
+//       background-color: #d44c07;
+//       .fixed {
+//         top: 0;
+//         right: 0;
+//         position: fixed;
+//         height: 100vh;
+//         display: flex;
+//       }
 
-  .head {
-    .controls {
-      position: fixed;
-      width: 100%;
-      background-color: midnightblue;
-      z-index: 2;
-      top: 0;
-      .container {
-        display: flex;
-        align-items: center;
-        overflow: hidden;
-        justify-content: space-between;
-      }
-      .bar {
-        background-color: #f1d4b3;
-        cursor: n-resize;
-        height: 8px;
-      }
-    }
-    .container,
-    .controls-2 {
-      height: 60px;
-    }
-  }
-  .body {
-    display: flex;
-    .mid {
-      padding: 10px 25px;
-    }
-    .right {
-      position: relative;
-      display: flex;
-      background-color: #d44c07;
-      .fixed {
-        top: 0;
-        right: 0;
-        position: fixed;
-        height: 100vh;
-        display: flex;
-      }
+//       .bar {
+//         background-color: #f1d4b3;
+//         cursor: ew-resize;
+//         width: 8px;
+//       }
 
-      .bar {
-        background-color: #f1d4b3;
-        cursor: ew-resize;
-        width: 8px;
-      }
+//       .controls {
+//         overflow: hidden;
+//         min-width: 0px;
+//         max-width: 80vw;
 
-      .controls {
-        overflow: hidden;
-        min-width: 0px;
-        max-width: 80vw;
-
-        .floating {
-          position: fixed;
-          width: 100%;
-          bottom: 0;
-          height: 100vh;
-        }
-      }
-    }
-  }
-  .counter {
-    width: 25px;
-  }
-}
+//         .floating {
+//           position: fixed;
+//           width: 100%;
+//           bottom: 0;
+//           height: 100vh;
+//         }
+//       }
+//     }
+//   }
+//   .counter {
+//     width: 25px;
+//   }
+// }
 
 body.furigana-off {
-  .mid {
-    ruby > rt {
-      visibility: hidden;
-    }
+  ruby > rt {
+    visibility: hidden;
   }
 }

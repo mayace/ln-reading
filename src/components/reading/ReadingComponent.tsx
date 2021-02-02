@@ -21,6 +21,8 @@ import { UpdateRightWidthCommand } from "./UpdateRightWidthCommand";
 import { UpdateTopHeightCommand } from "./UpdateTopHeightCommand";
 import { v4 as uuidv4 } from "uuid";
 import { Subject } from "rxjs";
+import { FuriganaVisibilityCommand } from "../Commands/FuriganaVisibilityCommand";
+import "./Reading.scss";
 
 export class ReadingComponent extends React.Component<IReadingProps, ReadingState> {
   beforeSettingsSubscription = new Subscription<ReadingSettings>();
@@ -297,6 +299,10 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
       this.commandProccesor.proccess();
     }
   }
+  updateFuriganaVisibility(visible: boolean): void {
+    this.commandProccesor.place(new FuriganaVisibilityCommand(visible));
+    this.commandProccesor.proccess();
+  }
 
   updateViewSettings(): void {
     const { view } = this.state.readingSettings;
@@ -568,6 +574,15 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
             />
           </div>
           <div className="column">
+            <label className="checkbox">
+              <input
+                onChange={({ target }) => this.updateFuriganaVisibility(target.checked)}
+                type="checkbox"
+              />
+              Furigana
+            </label>
+          </div>
+          <div className="column">
             <NavigationCommand
               onTryToChange={(to) => this.updateSettings({ navigation: to })}
               navigation={navigation}
@@ -578,7 +593,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
         <div className="columns">
           <div className="column">
             <DocumentDOM
-              fontSize={24}
+              fontSize={document.fontSize}
               color="#FFCC33"
               background="#280000"
               unitSize="px"
