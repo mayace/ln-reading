@@ -8,20 +8,34 @@ import { ICrudLikeService, IService } from "./services/IService";
 import { BookmarkSettings } from "./services/Bookmark";
 import { BookmarkLocalStorageService } from "./services/BookmarkLocalStorageService";
 import { KeywordSettings } from "./models/Settings";
-import { KeywordLocalStorageService } from "./services/KeywordService";
 import { FeedItemLocalStorageCrudService } from "./services/FeedItemLocalStorageCrudService";
 import { KeywordLocalStorageCrudService } from "./services/KeywordLocalStorageCrudService";
 import { FeedItem } from "./components/explorer/Feed";
+import { ReadingSettingsLocalStorageCrudService } from "./services/ReadingSettingsLocalStorageCrudService";
+import { ReadingSettings } from "./components/reading/ReadingSettings";
+import { IReadingService } from "./components/reading/service/IReadingService";
+import { LocalReadingService } from "./components/reading/service/LocalReadingService";
 
 export default function App(): ReactElement {
   const bookmarkService: IService<BookmarkSettings> = new BookmarkLocalStorageService(
-    "bookmarkServiceKey"
+    "bookmarkServiceKey",
   );
   const keywordService: ICrudLikeService<KeywordSettings> = new KeywordLocalStorageCrudService(
-    "keywordServiceKey"
+    "keywordServiceKey",
   );
   const feedItemService: ICrudLikeService<FeedItem> = new FeedItemLocalStorageCrudService(
-    "feedItemService"
+    "feedItemService",
+  );
+
+  const readingSettingsService: ICrudLikeService<ReadingSettings> = new ReadingSettingsLocalStorageCrudService(
+    "readingSettingsKey",
+  );
+
+  const readingService: IReadingService = new LocalReadingService(
+    keywordService,
+    feedItemService,
+    readingSettingsService,
+    bookmarkService,
   );
 
   return (
@@ -83,12 +97,7 @@ export default function App(): ReactElement {
                 <ExplorerComponent feedItemService={feedItemService} />
               </Route>
               <Route path="/reading">
-                <ReadingComponent
-                  keywordService={keywordService}
-                  bookmarkService={bookmarkService}
-                  feedItemService={feedItemService}
-                  contentStorageKey={"textContentKey"}
-                />
+                <ReadingComponent readingService={readingService} />
               </Route>
               <Route path="*">Not found!</Route>
             </Switch>

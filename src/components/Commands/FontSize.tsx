@@ -1,4 +1,4 @@
-import { DocumentSettings } from "../../models/Settings";
+import { DocumentSettings } from "../../models/DocumentSettings";
 import { ITryToChange } from "./TryToChangeHOC";
 import React from "react";
 

@@ -1,4 +1,4 @@
-import { NavigationSettings } from "../../models/Settings";
+import { NavigationSettings } from "../../models/NavigationSettings";
 import React from "react";
 
 export interface INavigationProps {

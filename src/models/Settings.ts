@@ -1,22 +1,16 @@
+import { DocumentSettings } from "./DocumentSettings";
+import { NavigationSettings } from "./NavigationSettings";
+
 export interface INavigationSettings {
   length: number;
   pageI: number;
   separator: string;
-}
-export class NavigationSettings implements INavigationSettings {
-  length = 10;
-  pageI = 0;
-  separator = "p";
 }
 export class ViewSettings {
   left = { width: 0 };
   top = { height: 0 };
   right = { width: 0 };
 }
-export class DocumentSettings {
-  fontSize = 14;
-}
-
 export class Settings {
   document = new DocumentSettings();
 

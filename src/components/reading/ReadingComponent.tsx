@@ -2,7 +2,9 @@
 import { cloneDeep } from "lodash";
 import React, { ReactNode } from "react";
 import { CommandProccesor } from "../../models/Command";
-import { DocumentSettings, KeywordSettings, NavigationSettings } from "../../models/Settings";
+import { KeywordSettings } from "../../models/Settings";
+import { NavigationSettings } from "../../models/NavigationSettings";
+import { DocumentSettings } from "../../models/DocumentSettings";
 
 import { IContext, Subscription } from "../../models/Subscription";
 import { FontSizeCommand } from "../Commands/FontSize";
@@ -47,9 +49,13 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
 
   constructor(props: IReadingProps) {
     super(props);
-    this.keywordListSubject.subscribe({
-      next: (context) => {
-        console.log(context);
+    this.settingsSubscription.subscribe({
+      next: ({ to, from }) => {
+        this.props.readingService.settingsService.update(to.id, to).then(() => {
+          if (to.document.withFurigana !== from.document.withFurigana) {
+            this.updateFuriganaVisibility(to.document.withFurigana);
+          }
+        });
       },
     });
 
@@ -77,69 +83,89 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
     // });
 
     // document
-    this.settingsSubscription.subscribe({
-      next: ({
-        to: {
-          document: { fontSize },
-          navigation: { pageI, separator, length },
-        },
-        from,
-      }) => {
-        if (fontSize !== from.document.fontSize) {
-          this.updateDocumentFontSize(fontSize);
-        }
+    // this.settingsSubscription.subscribe({
+    //   next: ({
+    //     to: {
+    //       document: { fontSize },
+    //       navigation: { pageI, separator, length },
+    //     },
+    //     from,
+    //   }) => {
+    //     // if (fontSize !== from.document.fontSize) {
+    //     //   this.updateDocumentFontSize(fontSize);
+    //     // }
 
-        const separatorChanged = separator !== from.navigation.separator;
-        const pageIChanged = pageI !== from.navigation.pageI;
-        const lengthChanged = length !== from.navigation.length;
-        if (separatorChanged || pageIChanged || lengthChanged) {
-          this.updateDocumentTextContent(this.props.contentStorageKey, {
-            pageI,
-            length,
-            separator,
-          });
-        }
+    //     // const separatorChanged = separator !== from.navigation.separator;
+    //     // const pageIChanged = pageI !== from.navigation.pageI;
+    //     // const lengthChanged = length !== from.navigation.length;
+    //     // if (separatorChanged || pageIChanged || lengthChanged) {
+    //     //   this.updateDocumentTextContent(this.props.contentStorageKey, {
+    //     //     pageI,
+    //     //     length,
+    //     //     separator,
+    //     //   });
+    //     // }
 
-        // hightlight fired
-        // let delayHighlightId: number | undefined;
-        // const currentPage = pages[pageI];
-        // const previousPage = from.pages[from.navigation.pageI];
-        // // console.log([currentPage, previousPage]);
-        // if (!isEqual(currentPage?.keyWordList, previousPage?.keyWordList)) {
-        //   window.clearTimeout(delayHighlightId);
-        //   delayHighlightId = window.setTimeout(() => {
-        //     this.updateDocumentHighlightText(currentPage?.keyWordList || []);
-        //     console.log("update highlights");
-        //   }, 500);
-        // }
-      },
-    });
+    //     // hightlight fired
+    //     // let delayHighlightId: number | undefined;
+    //     // const currentPage = pages[pageI];
+    //     // const previousPage = from.pages[from.navigation.pageI];
+    //     // // console.log([currentPage, previousPage]);
+    //     // if (!isEqual(currentPage?.keyWordList, previousPage?.keyWordList)) {
+    //     //   window.clearTimeout(delayHighlightId);
+    //     //   delayHighlightId = window.setTimeout(() => {
+    //     //     this.updateDocumentHighlightText(currentPage?.keyWordList || []);
+    //     //     console.log("update highlights");
+    //     //   }, 500);
+    //     // }
+    //   },
+    // });
 
     // view
-    this.settingsSubscription.subscribe({
-      next: ({
-        to: {
-          view: { top, right },
-        },
-        from,
-      }) => {
-        if (top.height !== from.view.top.height) {
-          this.updateTopHeight(top.height);
-        }
+    // this.settingsSubscription.subscribe({
+    //   next: ({
+    //     to: {
+    //       view: { top, right },
+    //     },
+    //     from,
+    //   }) => {
+    //     if (top.height !== from.view.top.height) {
+    //       this.updateTopHeight(top.height);
+    //     }
 
-        if (right.width !== from.view.right.width) {
-          this.updateRightWidth(right.width);
-        }
-      },
-    });
+    //     if (right.width !== from.view.right.width) {
+    //       this.updateRightWidth(right.width);
+    //     }
+    //   },
+    // });
   }
   componentDidMount(): void {
-    const { bookmarkService, feedItemService, keywordService } = this.props;
+    const {
+      bookmarkService,
+      feedItemService,
+      keywordService,
+      settingsService,
+    } = this.props.readingService;
+
+    settingsService
+      .getAll((item: unknown, index: number) => index === 0)
+      .then((body) => {
+        if (body.length > 0) {
+          const readingSettings = body[0];
+          return this.updateState({ readingSettings }).then(() => readingSettings);
+        }
+        const { readingSettings } = this.state;
+        readingSettings.id = uuidv4();
+        return settingsService.create(readingSettings).then(() => readingSettings);
+      })
+      .then((settings) => {
+        this.updateFuriganaVisibility(settings.document.withFurigana);
+      });
 
     bookmarkService.read().then(({ selectedGuid }) => {
       if (selectedGuid) {
         feedItemService.get(selectedGuid).then((feedItem) => {
-          console.log([selectedGuid, feedItem]);
+          // console.log([selectedGuid, feedItem]);
           if (feedItem) {
             keywordService
               .getAll(
@@ -173,7 +199,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
   }
 
   getKeywordList(keywordList: IReadingKeywordItem[]): Promise<KeywordSettings[]> {
-    return this.props.keywordService.getAll((item: KeywordSettings) =>
+    return this.props.readingService.keywordService.getAll((item: KeywordSettings) =>
       keywordList.find((jtem) => jtem.keywordId === item.id),
     );
   }
@@ -446,52 +472,52 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
     // this.updateSettings({ pages });
   }
 
-  createKeyword(text: string): void {
-    const { keywordService } = this.props;
-    const {
-      feedItem,
-      readingSettings: {
-        navigation: { pageI },
-      },
-    } = this.state;
+  // createKeyword(text: string): void {
+  //   const { keywordService } = this.props;
+  //   const {
+  //     feedItem,
+  //     readingSettings: {
+  //       navigation: { pageI },
+  //     },
+  //   } = this.state;
 
-    keywordService
-      .get(text)
-      .then((item) => {
-        if (!item) {
-          item = new KeywordSettings();
-          item.text = text;
-          item.color = "#" + Math.floor(Math.random() * 16777215).toString(16);
-          return keywordService.create(item).then(() => item);
-        }
+  //   keywordService
+  //     .get(text)
+  //     .then((item) => {
+  //       if (!item) {
+  //         item = new KeywordSettings();
+  //         item.text = text;
+  //         item.color = "#" + Math.floor(Math.random() * 16777215).toString(16);
+  //         return keywordService.create(item).then(() => item);
+  //       }
 
-        return item;
-      })
-      .then((item) => {
-        if (feedItem && item) {
-          if (!feedItem.keywordList) {
-            feedItem.keywordList = [];
-          }
+  //       return item;
+  //     })
+  //     .then((item) => {
+  //       if (feedItem && item) {
+  //         if (!feedItem.keywordList) {
+  //           feedItem.keywordList = [];
+  //         }
 
-          const found = feedItem.keywordList.find((jtem) => jtem.keywordId === item.id);
-          if (!found) {
-            feedItem.keywordList.push({ keywordId: item.id, pageIndex: pageI });
-            const { feedItemService } = this.props;
-            return feedItemService.get(feedItem.guid).then((body) => {
-              if (body) {
-                this.props.feedItemService.update(feedItem.guid, feedItem);
-              } else {
-                this.props.feedItemService.create(feedItem);
-              }
-            });
-          }
-        }
-      });
-  }
+  //         const found = feedItem.keywordList.find((jtem) => jtem.keywordId === item.id);
+  //         if (!found) {
+  //           feedItem.keywordList.push({ keywordId: item.id, pageIndex: pageI });
+  //           const { feedItemService } = this.props;
+  //           return feedItemService.get(feedItem.guid).then((body) => {
+  //             if (body) {
+  //               this.props.feedItemService.update(feedItem.guid, feedItem);
+  //             } else {
+  //               this.props.feedItemService.create(feedItem);
+  //             }
+  //           });
+  //         }
+  //       }
+  //     });
+  // }
 
   onKeywordChange(item: KeywordSettings): void {
     const { keywordList } = this.state;
-    this.props.keywordService.update(item.id, item).then(() => {
+    this.props.readingService.keywordService.update(item.id, item).then(() => {
       const jndex = keywordList.findIndex((jtem) => jtem.id === item.id);
       if (jndex >= 0) {
         keywordList[jndex] = item;
@@ -504,7 +530,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
       feedItem,
       readingSettings: { navigation },
     } = this.state;
-    const { keywordService, feedItemService } = this.props;
+    const { keywordService, feedItemService } = this.props.readingService;
 
     keywordService
       .getAll((jtem: KeywordSettings) => jtem.text === item.text)
@@ -550,7 +576,7 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
     keywordList.splice(index, 1);
     feedItem.keywordList.splice(jndex, 1);
 
-    this.props.feedItemService.update(feedItem.guid, feedItem).then(() => {
+    this.props.readingService.feedItemService.update(feedItem.guid, feedItem).then(() => {
       this.updateState({ feedItem });
       this.updateState({ keywordList });
     });
@@ -576,7 +602,10 @@ export class ReadingComponent extends React.Component<IReadingProps, ReadingStat
           <div className="column">
             <label className="checkbox">
               <input
-                onChange={({ target }) => this.updateFuriganaVisibility(target.checked)}
+                checked={document.withFurigana}
+                onChange={({ target }) =>
+                  this.updateSettings({ document: { ...document, withFurigana: target.checked } })
+                }
                 type="checkbox"
               />
               Furigana
