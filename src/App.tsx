@@ -10,11 +10,15 @@ import { BookmarkLocalStorageService } from "./services/BookmarkLocalStorageServ
 import { KeywordSettings } from "./models/Settings";
 import { FeedItemLocalStorageCrudService } from "./services/FeedItemLocalStorageCrudService";
 import { KeywordLocalStorageCrudService } from "./services/KeywordLocalStorageCrudService";
-import { FeedItem } from "./components/explorer/Feed";
+import { FeedItem } from "./components/explorer/FeedItem";
 import { ReadingSettingsLocalStorageCrudService } from "./services/ReadingSettingsLocalStorageCrudService";
 import { ReadingSettings } from "./components/reading/ReadingSettings";
 import { IReadingService } from "./components/reading/service/IReadingService";
 import { LocalReadingService } from "./components/reading/service/LocalReadingService";
+import { IExplorerService } from "./components/explorer/IExplorerService";
+import { LocalExplorerService } from "./components/explorer/LocalExplorerService";
+import { IPanelService } from "./components/panel/IPanelService";
+import { LocalPanelService } from "./components/panel/LocalPanelService";
 
 export default function App(): ReactElement {
   const bookmarkService: IService<BookmarkSettings> = new BookmarkLocalStorageService(
@@ -37,6 +41,12 @@ export default function App(): ReactElement {
     readingSettingsService,
     bookmarkService,
   );
+  const explorerService: IExplorerService = new LocalExplorerService(
+    bookmarkService,
+    feedItemService,
+  );
+
+  const panelService: IPanelService = new LocalPanelService(feedItemService, bookmarkService);
 
   return (
     <BrowserRouter>
@@ -90,11 +100,11 @@ export default function App(): ReactElement {
                 exact
                 path="/"
                 render={(props) => {
-                  return <PanelComponent bookmarkServiceKey="bookmarkServiceKey" {...props} />;
+                  return <PanelComponent service={panelService} {...props} />;
                 }}
               ></Route>
               <Route path="/feed">
-                <ExplorerComponent feedItemService={feedItemService} />
+                <ExplorerComponent service={explorerService} />
               </Route>
               <Route path="/reading">
                 <ReadingComponent readingService={readingService} />

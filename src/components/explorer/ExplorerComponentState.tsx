@@ -1,10 +1,10 @@
 import { BookmarkSettings } from "../../services/Bookmark";
-import { IFeedItemInfo } from "./Feed";
-
+import { IFeedItemExtras } from "./IFeedItemExtras";
+import { IFeedItemInfo } from "./IFeedItemInfo";
 
 export class ExplorerComponentState {
-  feedList: IFeedItemInfo[] = [];
+  feedList: (IFeedItemInfo & IFeedItemExtras)[] = [];
   feedUrlList: string[] = [];
-  selectedFeedItem: IFeedItemInfo | null = null;
+  selectedFeedItem: (IFeedItemInfo & IFeedItemExtras) | null = null;
   bookmarkSettings = new BookmarkSettings();
 }

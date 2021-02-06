@@ -1,7 +1,7 @@
 import { KeywordSettings } from "../../../models/Settings";
 import { BookmarkSettings } from "../../../services/Bookmark";
 import { ICrudLikeService, IService } from "../../../services/IService";
-import { FeedItem } from "../../explorer/Feed";
+import { FeedItem } from "../../explorer/FeedItem";
 import { ReadingSettings } from "../ReadingSettings";
 import { IReadingService } from "./IReadingService";
 

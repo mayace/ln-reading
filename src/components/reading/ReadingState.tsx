@@ -2,7 +2,7 @@ import { Observable, Observer, Subject, Subscriber } from "rxjs";
 import { ISubscriber } from "../../models/ISubscriber";
 import { KeywordSettings } from "../../models/Settings";
 import { IContext, ISubject, ISubscription, Subscription } from "../../models/Subscription";
-import { FeedItem } from "../explorer/Feed";
+import { FeedItem } from "../explorer/FeedItem";
 import { ReadingSettings } from "./ReadingSettings";
 
 export interface IReadingState {

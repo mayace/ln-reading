@@ -8,36 +8,27 @@ import {
   BookmarkSortMode,
   BookmarkViewMode,
 } from "../../services/Bookmark";
-import { BookmarkLocalStorageService } from "../../services/BookmarkLocalStorageService";
-
-export class PanelState {
-  bookmarkSettings = new BookmarkSettings();
-}
-export interface IPanelProps {
-  bookmarkServiceKey: string;
-}
-
-export interface IPanelSubscription {
-  from: BookmarkSettings;
-  to: BookmarkSettings;
-}
+import { IPanelProps } from "./IPanelProps";
+import { IPanelSubscription } from "./IPanelSubscription";
+import { PanelState } from "./PanelState";
 
 export class PanelComponent extends React.Component<IPanelProps & RouteComponentProps, PanelState> {
   state: PanelState = new PanelState();
 
-  bookmarkService: BookmarkLocalStorageService;
   subscription = new Subscription<IPanelSubscription>();
 
   constructor(props: IPanelProps & RouteComponentProps) {
     super(props);
-    this.bookmarkService = new BookmarkLocalStorageService(props.bookmarkServiceKey);
+
     this.subscription.subscribe({
-      next: ({ to }) => this.bookmarkService.save(to),
+      next: ({ to }) => this.props.service.bookmarkService.save(to),
     });
   }
 
   componentDidMount(): void {
-    this.bookmarkService.read().then((bookmarkSettings) => this.updateState({ bookmarkSettings }));
+    const { bookmarkService, feedItemService } = this.props.service;
+    feedItemService.getAll().then((feedItemList) => this.updateState({ feedItemList }));
+    bookmarkService.read().then((bookmarkSettings) => this.updateState({ bookmarkSettings }));
   }
 
   updateState<T extends keyof PanelState>(change: Pick<PanelState, T>): Promise<void> {
@@ -57,7 +48,8 @@ export class PanelComponent extends React.Component<IPanelProps & RouteComponent
 
   render(): ReactNode {
     const {
-      bookmarkSettings: { FeedItemList, viewMode, sortMode, dateMode },
+      bookmarkSettings: { viewMode, sortMode, dateMode },
+      feedItemList,
     } = this.state;
     return (
       <div className="panel-component">
@@ -133,7 +125,7 @@ export class PanelComponent extends React.Component<IPanelProps & RouteComponent
           </div> */}
         </div>
         <div className="columns is-multiline">
-          {FeedItemList.map((item) => {
+          {feedItemList.map((item) => {
             return (
               <div
                 className={viewMode === BookmarkViewMode.grid ? "column is-4" : "column is-12"}

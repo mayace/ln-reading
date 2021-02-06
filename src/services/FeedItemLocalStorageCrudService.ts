@@ -1,4 +1,4 @@
-import { FeedItem } from "../components/explorer/Feed";
+import { FeedItem } from "../components/explorer/FeedItem";
 import { LocalStorageCrudService } from "./LocalStorageCrudService";
 
 

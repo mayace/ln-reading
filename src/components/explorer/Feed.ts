@@ -1,44 +1,8 @@
 
 import RssParser from "rss-parser";
-
-export interface IReadingKeywordItem {
-    keywordId: string
-    pageIndex: number
-}
-
-export class FeedItem implements IFeedItemInfo {
-    contentSnippet = "";
-    title = "";
-    description = "";
-    link = "";
-    isoDate = "";
-    //becames the contentKey where is stored
-    content = "";
-    guid = ""
-    isPinned = false
-    views = 0
-    createdAt = new Date()
-    keywordList: IReadingKeywordItem[] = []
-}
-
-export interface IFeedInfo {
-    title: string;
-    description: string;
-    link: string;
-}
-export interface IFeedItemInfo {
-    title: string;
-    description: string;
-    link: string;
-    isoDate: string
-    content: string;
-    guid: string;
-    contentSnippet: string
-}
-
-export interface IFeed<T, U> {
-    parse(): Promise<T & RssParser.Output<U>>;
-}
+import { IFeed } from "./IFeed";
+import { IFeedInfo } from "./IFeedInfo";
+import { IFeedItemInfo } from "./IFeedItemInfo";
 
 export class Feed implements IFeed<IFeedInfo, IFeedItemInfo>{
     private proxy = "http://localhost:8080";

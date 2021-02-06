@@ -1,6 +1,5 @@
-import { ICrudLikeService } from "../../services/IService";
-import { FeedItem } from "./Feed";
+import { IExplorerService } from "./IExplorerService";
 
 export interface IExplorerComponentProps {
-  feedItemService: ICrudLikeService<FeedItem>;
+  service: IExplorerService;
 }
