@@ -142,26 +142,30 @@ export class ExplorerComponent extends React.Component<
             <div key={item.title} className="box">
               <div className="columns">
                 <div className="column is-2">
-                  <div className="has-text-centered">NHK easier</div>
+                  <div className="has-text-centered">
+                    <strong>{new Date(Date.parse(item.isoDate)).toLocaleString("es-gt")}</strong>
+                  </div>
                 </div>
                 <div className="column">
                   <div>
-                    <strong>{new Date(Date.parse(item.isoDate)).toLocaleString("es-gt")}</strong>
+                    <a onClick={() => this.onPreview(item)}>{item.title}</a>
+                  </div>
+                  <div>
                     <a href={item.link} target="blank">
                       <span className="icon">
                         <i className="fas fa-link"></i>
                       </span>
                     </a>
                     {item.bookmarked && (
-                      <a href="#">
-                        <span className="icon">
-                          <i className="fas fa-bookmark"></i>
-                        </span>
-                      </a>
+                      <span className="icon">
+                        <i className="fas fa-bookmark"></i>
+                      </span>
                     )}
-                  </div>
-                  <div>
-                    <a onClick={() => this.onPreview(item)}>{item.title}</a>
+                    {this.state.bookmarkSettings.selectedGuid === item.guid && (
+                      <span className="icon">
+                        <i className="fas fa-book-reader"></i>
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
