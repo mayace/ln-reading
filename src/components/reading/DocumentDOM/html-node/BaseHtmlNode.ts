@@ -6,7 +6,7 @@ export type NodeMapType = { node: BaseHtmlNode; map: number[] };
 
 export abstract class BaseHtmlNode implements INode, ILinkedComposite<BaseHtmlNode> {
   private __next: BaseHtmlNode | undefined;
-  private __style = new CSSStyleDeclaration();
+  private __style : CSSStyleDeclaration | undefined;
   private __text: string;
 
   constructor(text: string) {
@@ -16,9 +16,6 @@ export abstract class BaseHtmlNode implements INode, ILinkedComposite<BaseHtmlNo
   abstract getHtml(): Node;
   abstract getHtml(text: string): Node;
 
-  getStyle(): CSSStyleDeclaration {
-    return this.__style;
-  }
 
   getText(): string {
     return this.__text;

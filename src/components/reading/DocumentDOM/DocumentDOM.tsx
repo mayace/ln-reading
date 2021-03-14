@@ -1,5 +1,9 @@
 import React, { ReactNode } from "react";
 import { DocumentDOMState } from "./DocumentDOMState";
+import { ParagraphHtmlNode } from "./html-node/ParagraphHtmlNode";
+import { RubyHtmlNode } from "./html-node/RubyHtmlNode";
+import { SpanHtmlNode } from "./html-node/SpanHtmlNode";
+import { TextHtmlNode } from "./html-node/TextHtmlNode";
 import { IDocumentDOMProps } from "./IDocumentDOMProps";
 import { IKeyword } from "./IKeyword";
 import { ITextRangePosition } from "./ITextRangePosition";
@@ -24,14 +28,45 @@ export class DocumentDOM extends React.Component<IDocumentDOMProps, DocumentDOMS
     if (el) {
       this.cleanElement(el);
       elementList.forEach((item) => {
-        const jpNode = JpNode.fromHtml(item);
-        this.highlightText(jpNode, this.props.KeywordList);
-        el.appendChild(jpNode.getHtmlNode());
+        const text = new TextHtmlNode(this.getTextFromHtml(item));
+        let pointer = text;
+        item.childNodes.forEach((jtem) => {
+          const jnode = new TextHtmlNode(this.getTextFromHtml(jtem));
+          if (jtem.nodeName === "RUBY") {
+            pointer = pointer.append(new RubyHtmlNode(jnode, this.getRtTextFromRuby(jtem as Element)));
+          } else {
+            pointer = pointer.append(jnode);
+          }
+        });
+
+        const node = new ParagraphHtmlNode(text);
+        // const jpNode = JpNode.fromHtml(item);
+        // this.highlightText(jpNode, this.props.KeywordList);
+        el.appendChild(node.getHtml());
       });
     }
   }
   changeFontSize(to: number): void {
     this.setState({ fontSize: to });
+  }
+
+  private getRtTextFromRuby(node: Element): string {
+    return node.querySelector("rt")?.textContent || "";
+  }
+  private getTextFromHtml(node: Node): string {
+    if (node.nodeName === "RT") {
+      return "";
+    }
+
+    if (node.hasChildNodes()) {
+      let text = "";
+      node.childNodes.forEach((jtem) => {
+        text += this.getTextFromHtml(jtem);
+      });
+      return text;
+    }
+
+    return node.textContent || "";
   }
 
   cleanElement(el: Element): void {

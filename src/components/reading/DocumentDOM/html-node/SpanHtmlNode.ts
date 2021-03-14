@@ -5,3 +5,5 @@ export class SpanHtmlNode extends DecoratorHtmlNode {
     return document.createElement("span");
   }
 }
+
+
