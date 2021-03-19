@@ -1,14 +1,13 @@
 import { DocumentSettings } from "../../models/DocumentSettings";
 import { ITryToChange } from "./TryToChangeHOC";
-import React from "react";
-
+import React, { ReactElement } from "react";
 
 export function FontSizeCommand(
-  props: { document: DocumentSettings } & ITryToChange<DocumentSettings>
-) {
+  props: { document: DocumentSettings } & ITryToChange<DocumentSettings>,
+): ReactElement {
   const { document } = props;
 
-  const onChange = (to: any) => {
+  const onChange = (to: { [index: string]: unknown }) => {
     const from = props.document;
     props.onTryToChange({ ...from, ...to }, from);
   };

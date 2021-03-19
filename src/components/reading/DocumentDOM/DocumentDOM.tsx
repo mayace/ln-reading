@@ -2,7 +2,6 @@ import React, { ReactNode } from "react";
 import { DocumentDOMState } from "./DocumentDOMState";
 import { ParagraphHtmlNode } from "./html-node/ParagraphHtmlNode";
 import { RubyHtmlNode } from "./html-node/RubyHtmlNode";
-import { SpanHtmlNode } from "./html-node/SpanHtmlNode";
 import { TextHtmlNode } from "./html-node/TextHtmlNode";
 import { IDocumentDOMProps } from "./IDocumentDOMProps";
 import { IKeyword } from "./IKeyword";
@@ -33,7 +32,9 @@ export class DocumentDOM extends React.Component<IDocumentDOMProps, DocumentDOMS
         item.childNodes.forEach((jtem) => {
           const jnode = new TextHtmlNode(this.getTextFromHtml(jtem));
           if (jtem.nodeName === "RUBY") {
-            pointer = pointer.append(new RubyHtmlNode(jnode, this.getRtTextFromRuby(jtem as Element)));
+            pointer = pointer.append(
+              new RubyHtmlNode(jnode, this.getRtTextFromRuby(jtem as Element)),
+            );
           } else {
             pointer = pointer.append(jnode);
           }

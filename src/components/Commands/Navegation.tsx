@@ -1,13 +1,13 @@
 import { NavigationSettings } from "../../models/NavigationSettings";
-import React from "react";
+import React, { ReactElement } from "react";
 
 export interface INavigationProps {
   navigation: NavigationSettings;
   onTryToChange: (to: NavigationSettings, form: NavigationSettings) => void;
 }
 
-export function NavigationCommand({ navigation, onTryToChange }: INavigationProps) {
-  const onChange = (to: any) => {
+export function NavigationCommand({ navigation, onTryToChange }: INavigationProps): ReactElement {
+  const onChange = (to: { [index: string]: unknown }) => {
     onTryToChange({ ...navigation, ...to }, navigation);
   };
 

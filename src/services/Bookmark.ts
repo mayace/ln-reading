@@ -1,5 +1,3 @@
-import { FeedItem } from "../components/explorer/FeedItem";
-
 export enum BookmarkDateMode {
   day = 0,
   week = 1,
