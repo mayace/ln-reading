@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React, { ReactElement, ReactNode } from "react";
 import { ModalComponent } from "../modal/Modal";
 import { ExplorerComponentState } from "./ExplorerComponentState";
 import { Feed } from "./Feed";
@@ -54,7 +54,7 @@ export class ExplorerComponent extends React.Component<
   }
 
   onPreview(item: IFeedItemInfo & IFeedItemExtras): void {
-    this.updateState({ selectedFeedItem: item });
+    // this.updateState({ selectedFeedItem: item });
   }
 
   fixRelativeUrl(content: string, domain: string): string {
@@ -86,6 +86,21 @@ export class ExplorerComponent extends React.Component<
     this.updateState({ bookmarkSettings });
     bookmarkService.save(bookmarkSettings);
     window.localStorage.removeItem(item.guid);
+  }
+
+  date_displayer(date: Date): JSX.Element {
+    const month = `00${date.getMonth()}`.slice(-2);
+    const day = `00${date.getDate()}`.slice(-2);
+
+    const hours = `00${date.getHours()}`.slice(-2);
+    const minutes = `00${date.getMinutes()}`.slice(-2);
+    const seconds = `00${date.getSeconds()}`.slice(-2);
+
+    return (
+      <span>
+        {date.getFullYear()}-{month}-{day} {hours}:{minutes}:{seconds}
+      </span>
+    );
   }
 
   render(): ReactNode {
@@ -143,7 +158,7 @@ export class ExplorerComponent extends React.Component<
               <div className="columns">
                 <div className="column is-2">
                   <div className="has-text-centered">
-                    <strong>{new Date(Date.parse(item.isoDate)).toLocaleString("es-gt")}</strong>
+                    {this.date_displayer(new Date(item.isoDate))}
                   </div>
                 </div>
                 <div className="column">
